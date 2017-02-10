@@ -1,0 +1,13 @@
+nl\ocs\roomplanner\service\impl\EmployeeServiceImpl.class
+nl\ocs\roomplanner\service\impl\LocationServiceImpl.class
+nl\ocs\roomplanner\service\OrganisationService.class
+nl\ocs\roomplanner\service\RoomService.class
+nl\ocs\roomplanner\solver\SolverSettings.class
+nl\ocs\roomplanner\solver\RoomplanningSolution.class
+nl\ocs\roomplanner\solver\RoomSolver.class
+nl\ocs\roomplanner\service\EmployeeService.class
+nl\ocs\roomplanner\service\impl\OrganisationServiceImpl.class
+nl\ocs\roomplanner\service\impl\MeetingServiceImpl.class
+nl\ocs\roomplanner\service\MeetingService.class
+nl\ocs\roomplanner\service\LocationService.class
+nl\ocs\roomplanner\service\impl\RoomServiceImpl.class
