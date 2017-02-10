@@ -1,0 +1,7 @@
+  .v-treetable-node-open:before {
+    content: '\\/' !important;
+  }
+
+  .v-treetable-node-closed:before {
+    content: '>' !important;
+  }

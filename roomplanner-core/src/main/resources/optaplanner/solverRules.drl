@@ -1,0 +1,114 @@
+/*
+ * Copyright 2010 JBoss Inc
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package nl.ocs.roomplanner.solver;
+    dialect "java"
+
+import org.optaplanner.core.api.score.buildin.hardmediumsoft.HardMediumSoftScoreHolder;
+
+import nl.ocs.roomplanner.domain.Room;
+import nl.ocs.roomplanner.domain.Meeting;
+import nl.ocs.roomplanner.domain.Employee;
+import nl.ocs.roomplanner.solver.SolverSettings;
+
+global HardMediumSoftScoreHolder scoreHolder;
+
+// ############################################################################
+// Hard constraints
+// ############################################################################
+
+rule "roomSizeNotExceeded" 
+   when
+        $room: Room($capacity: capacity)
+        $meeting: Meeting($numberOfAttendees: numberOfAttendees, room == $room, numberOfAttendees > $capacity)
+               
+    then
+        scoreHolder.addHardConstraintMatch(kcontext, $capacity - $numberOfAttendees);
+end
+
+rule "roomNotDoubleBooked" 
+   when
+   		$meeting: Meeting($meetingId: meetingId, $room: room, $meetingDate: meetingDate)
+   		$meeting2: Meeting(meetingId != $meetingId, room == $room, meetingDate == $meetingDate)           
+    then
+        scoreHolder.addHardConstraintMatch(kcontext, -10);
+end
+
+rule "matchPriority" 
+   when
+        $room: Room($comfortLevel: comfortLevel)
+        $meeting: Meeting($priorityAsInteger: priorityAsInteger, room == $room, priorityAsInteger > $comfortLevel)
+   then
+        scoreHolder.addHardConstraintMatch(kcontext, $comfortLevel - $priorityAsInteger);
+end
+
+rule "locationMatches" 
+   when
+   		$room: Room($location: location)
+   		$meeting: Meeting(room == $room, desiredLocation != $location)
+   then
+        scoreHolder.addHardConstraintMatch(kcontext, -10);
+end
+
+rule "whiteBoardPresent" 
+   when
+   		$room: Room($location: location, whiteboard == false)
+   		$meeting: Meeting(room == $room, whiteboard == true)
+   		          
+    then
+        scoreHolder.addHardConstraintMatch(kcontext, -1);
+end
+
+rule "videoConferencingPresent" 
+   when
+   		$room: Room($location: location, videoConferencing == false)
+   		$meeting: Meeting(room == $room, videoConferencing == true)
+   		          
+    then
+        scoreHolder.addHardConstraintMatch(kcontext, -1);
+end
+
+rule "personNotDoubleBooked" 
+   when
+        SolverSettings(checkEmployeeDoubleBooking == true)
+		$person: Employee()
+    	$meeting: Meeting($meetingId: meetingId, $person memberOf attendees, $meetingDate: meetingDate)
+   		$meeting2: Meeting(meetingId != $meetingId,  $person memberOf attendees, meetingDate == $meetingDate)     
+   		          
+    then
+        scoreHolder.addHardConstraintMatch(kcontext, -1);
+end
+
+
+rule "avoidOvercapacity" 
+   when
+        SolverSettings(optimizeCapacity == true)
+        $room: Room($capacity: capacity)
+        $meeting: Meeting($numberOfAttendees: numberOfAttendees, room == $room, numberOfAttendees < $capacity)
+               
+    then
+        scoreHolder.addMediumConstraintMatch(kcontext, 100 *  ($numberOfAttendees - $capacity));
+end 
+
+rule "minimizeCost" 
+   when
+        SolverSettings(optimizeCosts == true)
+        $room: Room(costPerHour != null, $cost: costPerHour)
+        $meeting: Meeting(room == $room)
+   then
+        scoreHolder.addMediumConstraintMatch(kcontext, - $cost);
+end
+

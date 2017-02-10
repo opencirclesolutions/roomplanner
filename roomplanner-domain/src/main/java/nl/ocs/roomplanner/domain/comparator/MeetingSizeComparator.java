@@ -1,0 +1,14 @@
+package nl.ocs.roomplanner.domain.comparator;
+
+import java.util.Comparator;
+
+import nl.ocs.roomplanner.domain.Meeting;
+
+public class MeetingSizeComparator implements Comparator<Meeting> {
+
+	@Override
+	public int compare(Meeting m1, Meeting m2) {
+		return m2.getNumberOfAttendees() - m1.getNumberOfAttendees();
+	}
+
+}

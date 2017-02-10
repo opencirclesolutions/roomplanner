@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:camel="http://camel.apache.org/schema/spring"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:osgi="http://www.springframework.org/schema/osgi" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:tx="http://www.springframework.org/schema/tx"  
+	xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+       http://www.springframework.org/schema/osgi http://www.springframework.org/schema/osgi/spring-osgi.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.2.xsd
+       http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-3.2.xsd
+       http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.2.xsd
+       http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.2.xsd">
+
+	<context:annotation-config />
+
+	<aop:aspectj-autoproxy></aop:aspectj-autoproxy>
+
+	<context:component-scan base-package="nl.ocs.roomplanner" />
+
+	<tx:annotation-driven transaction-manager="transactionManager" />
+
+	<bean id="validator"
+		class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean">
+		<property name="validationMessageSource" ref="messageSource" />
+	</bean>
+
+	<bean id="propertyPlaceholder"
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_OVERRIDE" />
+		<property name="location" value="classpath:application.properties" />
+		<property name="ignoreResourceNotFound" value="false" />
+	</bean>
+
+	<!-- The entity model factory -->
+	<bean id="entityModelFactory" class="com.ocs.dynamo.domain.model.impl.EntityModelFactoryImpl" />
+
+	<!-- The message service -->
+	<bean id="messageService" class="com.ocs.dynamo.service.impl.MessageServiceImpl" />
+
+	<bean id="messageSource"
+		class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>classpath:/META-INF/entitymodel</value>
+				<value>classpath:/menu</value>
+				<value>classpath:/messages</value>
+				<value>classpath:/ocscommon</value>
+				<value>classpath:/ValidationMessages</value>
+			</list>
+		</property>
+		<property name="fallbackToSystemLocale" value="false" />
+	</bean>
+
+	<bean id="menuService" class="com.ocs.dynamo.ui.menu.MenuService" />
+
+	<!-- service for checking who has access to which view -->
+	<bean id="permissionChecker" class="com.ocs.dynamo.ui.auth.DefaultPermissionCheckerImpl">
+		<constructor-arg value="nl.ocs.roomplanner" />
+	</bean>
+
+</beans>
