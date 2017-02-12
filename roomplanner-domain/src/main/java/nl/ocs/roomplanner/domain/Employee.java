@@ -33,7 +33,7 @@ public class Employee extends AbstractTreeEntity<Integer, Employee> {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "employees_id_seq")
     private Integer id;
 
-    @Attribute(searchable = true, defaultValue = "Bas")
+    @Attribute(searchable = true)
     @Size(min = 0, max = 50)
     @Column(name = "first_name")
     @NotNull

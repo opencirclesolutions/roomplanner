@@ -36,7 +36,7 @@ rule "roomSizeNotExceeded"
         $meeting: Meeting($numberOfAttendees: numberOfAttendees, room == $room, numberOfAttendees > $capacity)
                
     then
-        scoreHolder.addHardConstraintMatch(kcontext, $capacity - $numberOfAttendees);
+        scoreHolder.addHardConstraintMatch(kcontext, $capacity.intValue() - $numberOfAttendees.intValue());
 end
 
 rule "roomNotDoubleBooked" 
@@ -52,7 +52,7 @@ rule "matchPriority"
         $room: Room($comfortLevel: comfortLevel)
         $meeting: Meeting($priorityAsInteger: priorityAsInteger, room == $room, priorityAsInteger > $comfortLevel)
    then
-        scoreHolder.addHardConstraintMatch(kcontext, $comfortLevel - $priorityAsInteger);
+        scoreHolder.addHardConstraintMatch(kcontext, $comfortLevel.intValue() - $priorityAsInteger);
 end
 
 rule "locationMatches" 
@@ -100,7 +100,7 @@ rule "avoidOvercapacity"
         $meeting: Meeting($numberOfAttendees: numberOfAttendees, room == $room, numberOfAttendees < $capacity)
                
     then
-        scoreHolder.addMediumConstraintMatch(kcontext, 100 *  ($numberOfAttendees - $capacity));
+        scoreHolder.addMediumConstraintMatch(kcontext, 100 *  ($numberOfAttendees.intValue() - $capacity.intValue()));
 end 
 
 rule "minimizeCost" 
@@ -109,6 +109,6 @@ rule "minimizeCost"
         $room: Room(costPerHour != null, $cost: costPerHour)
         $meeting: Meeting(room == $room)
    then
-        scoreHolder.addMediumConstraintMatch(kcontext, - $cost);
+        scoreHolder.addMediumConstraintMatch(kcontext, - $cost.intValue());
 end
 

@@ -38,10 +38,12 @@ public class Location extends AbstractEntity<Integer> {
 
 	@NotNull
 	@Size(max = 20)
+	@Attribute(searchable = true)
 	private String code;
 
 	@NotNull
 	@Size(max = 100)
+	@Attribute(searchable = true)
 	private String name;
 
 	@NotNull
@@ -126,7 +128,7 @@ public class Location extends AbstractEntity<Integer> {
 		return room;
 	}
 
-	@Attribute(readOnly = true, visible = VisibilityType.HIDE)
+	@Attribute(readOnly = true, visible = VisibilityType.HIDE, main = true)
 	public String getCodeAndName() {
 		return this.getCode() + " " + this.getName();
 	}
@@ -139,7 +141,4 @@ public class Location extends AbstractEntity<Integer> {
 		this.organisation = organisation;
 	}
 
-	public String getDescription() {
-		return name;
-	}
 }

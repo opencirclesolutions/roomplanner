@@ -10,7 +10,6 @@ import nl.ocs.roomplanner.domain.MeetingDTO;
 import nl.ocs.roomplanner.domain.Organisation;
 import nl.ocs.roomplanner.service.OrganisationService;
 
-import org.drools.core.util.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Configuration;
@@ -25,6 +24,7 @@ import com.ocs.dynamo.ui.component.ErrorView;
 import com.ocs.dynamo.ui.menu.MenuService;
 import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.VaadinServletConfiguration;
+import com.vaadin.annotations.Widgetset;
 import com.vaadin.navigator.Navigator;
 import com.vaadin.server.ThemeResource;
 import com.vaadin.server.VaadinRequest;
@@ -35,20 +35,11 @@ import com.vaadin.spring.annotation.UIScope;
 import com.vaadin.spring.navigator.SpringViewProvider;
 import com.vaadin.spring.server.SpringVaadinServlet;
 import com.vaadin.ui.Alignment;
-import com.vaadin.ui.Button;
-import com.vaadin.ui.Button.ClickEvent;
-import com.vaadin.ui.FormLayout;
-import com.vaadin.ui.GridLayout;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Image;
-import com.vaadin.ui.InlineDateField;
-import com.vaadin.ui.Label;
 import com.vaadin.ui.Layout;
 import com.vaadin.ui.MenuBar;
-import com.vaadin.ui.Notification;
 import com.vaadin.ui.Panel;
-import com.vaadin.ui.PasswordField;
-import com.vaadin.ui.TextField;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 
@@ -62,10 +53,8 @@ import com.vaadin.ui.VerticalLayout;
 @Theme("light")
 @SuppressWarnings("serial")
 @UIScope
-// @Widgetset("nl.ocs.MyAppWidgetset")
+@Widgetset(value = "com.ocs.dynamo.DynamoWidgetSet")
 public class RoomplannerUI extends UI implements Subject<MeetingDTO> {
-
-	private boolean loggedIn = false;
 
 	// the version number - retrieved from pom file via application.properties
 	@Autowired
@@ -123,86 +112,6 @@ public class RoomplannerUI extends UI implements Subject<MeetingDTO> {
 
 		main = new VerticalLayout();
 		setContent(main);
-
-		// if (!loggedIn) {
-		// Layout layout = buildLoginLayout();
-		// main.replaceComponent(selectedLayout, layout);
-		// selectedLayout = layout;
-		// } else {
-		Layout layout = buildLoggedInLayout();
-		main.replaceComponent(selectedLayout, layout);
-		selectedLayout = layout;
-		// }
-	}
-
-	private Layout buildLoginLayout() {
-		Layout result = new DefaultVerticalLayout(false, false);
-		result.setHeight(1000, Unit.PERCENTAGE);
-
-		result.setStyleName("login");
-
-		GridLayout gridLayout = new GridLayout(9, 9);
-		gridLayout.setSizeFull();
-		result.addComponent(gridLayout);
-
-		for (int i = 0; i < 9; i++) {
-			for (int j = 0; j < 9; j++) {
-				if (!(j == 4 && i == 4)) {
-					Label label = new Label("");
-					label.setHeight(100, Unit.PIXELS);
-					gridLayout.addComponent(label, i, j);
-				}
-			}
-		}
-
-		FormLayout loginForm = new FormLayout();
-		loginForm.setMargin(true);
-		loginForm.setSpacing(true);
-		gridLayout.addComponent(loginForm, 4, 4);
-
-		Label loginLabel = new Label("Log in");
-		loginForm.addComponent(loginLabel);
-		loginForm.setComponentAlignment(loginLabel, Alignment.MIDDLE_CENTER);
-		loginForm.setId("loginForm");
-
-		final TextField userName = new TextField("User name");
-		loginForm.addComponent(userName);
-
-		final PasswordField password = new PasswordField("Password");
-		loginForm.addComponent(password);
-
-		HorizontalLayout buttonBar = new DefaultHorizontalLayout();
-		loginForm.addComponent(buttonBar);
-
-		Button loginButton = new Button("Log in");
-		loginButton.addClickListener(new Button.ClickListener() {
-
-			@Override
-			public void buttonClick(ClickEvent event) {
-				login(userName.getValue(), password.getValue());
-			}
-		});
-		buttonBar.addComponent(loginButton);
-
-		return result;
-	}
-
-	private void login(String userName, String password) {
-
-		if (StringUtils.isEmpty(userName)) {
-			Notification.show("User name is required", Notification.Type.ERROR_MESSAGE);
-			return;
-		}
-
-		if (StringUtils.isEmpty(password)) {
-			Notification.show("Password is required", Notification.Type.ERROR_MESSAGE);
-			return;
-		}
-
-		if (!userName.equals(password)) {
-			Notification.show("Your credentials are not correct", Notification.Type.ERROR_MESSAGE);
-			return;
-		}
 
 		Layout layout = buildLoggedInLayout();
 		main.replaceComponent(selectedLayout, layout);

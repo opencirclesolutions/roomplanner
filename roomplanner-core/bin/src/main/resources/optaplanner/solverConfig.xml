@@ -5,19 +5,11 @@
 	<entityClass>nl.ocs.roomplanner.domain.Meeting</entityClass>
 	<scoreDirectorFactory>
 		<scoreDefinitionType>HARD_MEDIUM_SOFT</scoreDefinitionType>
-		<!--<easyScoreCalculatorClass>org.optaplanner.examples.nqueens.solver.score.NQueensEasyScoreCalculator</easyScoreCalculatorClass> -->
-		<!--<easyScoreCalculatorClass>org.optaplanner.examples.nqueens.solver.score.NQueensMapBasedEasyScoreCalculator</easyScoreCalculatorClass> -->
-		<!--<incrementalScoreCalculatorClass>org.optaplanner.examples.nqueens.solver.score.NQueensBasicIncrementalScoreCalculator</incrementalScoreCalculatorClass> -->
-		<!--<incrementalScoreCalculatorClass>org.optaplanner.examples.nqueens.solver.score.NQueensAdvancedIncrementalScoreCalculator</incrementalScoreCalculatorClass> -->
 		<scoreDrl>optaplanner/solverRules.drl</scoreDrl>
-		<!-- <initializingScoreTrend>ONLY_DOWN</initializingScoreTrend> -->
-		<!--<assertionScoreDirectorFactory> -->
-		<!--<easyScoreCalculatorClass>org.optaplanner.examples.nqueens.solver.score.NQueensEasyScoreCalculator</easyScoreCalculatorClass> -->
-		<!--</assertionScoreDirectorFactory> -->
+		<initializingScoreTrend>ANY</initializingScoreTrend> 
 	</scoreDirectorFactory>
 
 	<termination>
-		<!--  <secondsSpentLimit>15</secondsSpentLimit>-->
         <terminationCompositionStyle>OR</terminationCompositionStyle>
         <bestScoreLimit>0hard/-1000medium/-20000soft</bestScoreLimit>		
 		<unimprovedSecondsSpentLimit>30</unimprovedSecondsSpentLimit>
@@ -27,20 +19,17 @@
 		<constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
 	</constructionHeuristic>
 	<localSearch>
-		
 	    <unionMoveSelector>
 	      <changeMoveSelector/>
 	      <swapMoveSelector/>
 	      <pillarChangeMoveSelector/>
 	      <pillarSwapMoveSelector/>
 	    </unionMoveSelector>
-
-    <acceptor>
-      <lateAcceptanceSize>600</lateAcceptanceSize>
-    </acceptor>
-    <forager>
-      <acceptedCountLimit>4</acceptedCountLimit>
-    </forager>
-
+	    <acceptor>
+	      <lateAcceptanceSize>600</lateAcceptanceSize>
+	    </acceptor>
+	    <forager>
+	      <acceptedCountLimit>4</acceptedCountLimit>
+	    </forager>
 	</localSearch>
 </solver>

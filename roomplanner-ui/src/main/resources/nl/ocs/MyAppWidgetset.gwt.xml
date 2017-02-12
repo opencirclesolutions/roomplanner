@@ -14,5 +14,5 @@
 
     <inherits name="com.ocs.dynamo.DynamoWidgetSet" />
 
-    <inherits name="org.tltv.gantt.WidgetSet" />
+    
 </module>

@@ -8,25 +8,20 @@ import nl.ocs.roomplanner.ui.Views;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.ocs.dynamo.ui.component.DefaultVerticalLayout;
 import com.ocs.dynamo.ui.composite.form.FormOptions;
 import com.ocs.dynamo.ui.composite.layout.ServiceBasedDetailLayout;
-import com.ocs.dynamo.ui.view.BaseView;
+import com.ocs.dynamo.ui.view.LazyBaseView;
 import com.vaadin.data.Container.Filter;
 import com.vaadin.data.util.filter.Compare;
-import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
 import com.vaadin.server.VaadinSession;
 import com.vaadin.spring.annotation.SpringView;
 import com.vaadin.spring.annotation.UIScope;
-import com.vaadin.ui.Layout;
-import com.vaadin.ui.VerticalLayout;
+import com.vaadin.ui.Component;
 
-@SpringView(name = Views.LOCATIONS_VIEW)
 @UIScope
+@SpringView(name = Views.LOCATIONS_VIEW)
 @SuppressWarnings("serial")
-public class LocationView extends BaseView {
-
-	private Layout mainLayout;
+public class LocationView extends LazyBaseView {
 
 	@Autowired
 	private OrganisationService organisationService;
@@ -34,22 +29,14 @@ public class LocationView extends BaseView {
 	@Autowired
 	private LocationService locationService;
 
+	private ServiceBasedDetailLayout<Integer, Location, Integer, Organisation> locationLayout;
+
 	@Override
-	public void enter(ViewChangeEvent event) {
-		VerticalLayout main = new DefaultVerticalLayout(true, true);
+	public Component build() {
+		final Organisation organisation = (Organisation) VaadinSession.getCurrent().getAttribute("organisation");
 
-		mainLayout = new VerticalLayout();
-		main.addComponent(mainLayout);
-
-		setCompositionRoot(main);
-
-		final Organisation organisation = (Organisation) VaadinSession.getCurrent().getAttribute(
-				"organisation");
-
-		ServiceBasedDetailLayout<Integer, Location, Integer, Organisation> locationLayout = new ServiceBasedDetailLayout<Integer, Location, Integer, Organisation>(
-				locationService, (Organisation) VaadinSession.getCurrent().getAttribute(
-						"organisation"), organisationService, getModelFactory().getModel(
-						Location.class), new FormOptions(), null) {
+		locationLayout = new ServiceBasedDetailLayout<Integer, Location, Integer, Organisation>(locationService,
+		        organisation, organisationService, getModelFactory().getModel(Location.class), new FormOptions(), null) {
 
 			@Override
 			protected Filter constructFilter() {
@@ -63,7 +50,7 @@ public class LocationView extends BaseView {
 				return location;
 			}
 		};
-		mainLayout.addComponent(locationLayout);
+		return locationLayout;
 	}
 
 }

@@ -6,46 +6,39 @@ import nl.ocs.roomplanner.ui.Views;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.ocs.dynamo.ui.component.DefaultVerticalLayout;
 import com.ocs.dynamo.ui.composite.form.FormOptions;
 import com.ocs.dynamo.ui.composite.layout.TabularEditLayout;
-import com.ocs.dynamo.ui.view.BaseView;
+import com.ocs.dynamo.ui.view.LazyBaseView;
 import com.vaadin.data.sort.SortOrder;
-import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
 import com.vaadin.shared.data.sort.SortDirection;
 import com.vaadin.spring.annotation.SpringView;
 import com.vaadin.spring.annotation.UIScope;
-import com.vaadin.ui.Layout;
-import com.vaadin.ui.VerticalLayout;
+import com.vaadin.ui.Component;
 
-@SpringView(name = Views.EMPLOYEE_VIEW)
 @UIScope
+@SpringView(name = Views.EMPLOYEE_VIEW)
 @SuppressWarnings("serial")
-public class EmployeesView extends BaseView {
+public class EmployeesView extends LazyBaseView {
 
-    private Layout mainLayout;
+	@Autowired
+	private EmployeeService employeeService;
 
-    @Autowired
-    private EmployeeService employeeService;
+	private TabularEditLayout<Integer, Employee> employeeLayout;
 
-    @Override
-    public void enter(ViewChangeEvent event) {
-        VerticalLayout main = new DefaultVerticalLayout(true, true);
+	@Override
+	public Component build() {
 
-        mainLayout = new VerticalLayout();
-        main.addComponent(mainLayout);
+		FormOptions options = new FormOptions().setShowRemoveButton(true);
 
-        setCompositionRoot(main);
+		TabularEditLayout<Integer, Employee> employeeLayout = new TabularEditLayout<Integer, Employee>(employeeService,
+		        getModelFactory().getModel(Employee.class), options, new SortOrder("lastName", SortDirection.ASCENDING)) {
+		};
+		employeeLayout.addSortOrder(new SortOrder("firstName", SortDirection.ASCENDING));
+		return employeeLayout;
+	}
 
-        FormOptions options = new FormOptions();
-        options.setShowRemoveButton(true);
-
-        TabularEditLayout<Integer, Employee> employeeLayout = new TabularEditLayout<Integer, Employee>(
-                employeeService, getModelFactory().getModel(Employee.class), options,
-                new SortOrder("lastName", SortDirection.ASCENDING)) {
-        };
-        employeeLayout.addSortOrder(new SortOrder("firstName", SortDirection.ASCENDING));
-        mainLayout.addComponent(employeeLayout);
-    }
-
+	@Override
+	protected void refresh() {
+		employeeLayout.reload();
+	}
 }
