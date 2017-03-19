@@ -3,76 +3,65 @@ package nl.ocs.roomplanner.ui.room;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.inject.Inject;
+
 import nl.ocs.roomplanner.domain.Organisation;
 import nl.ocs.roomplanner.domain.Room;
 import nl.ocs.roomplanner.service.OrganisationService;
 import nl.ocs.roomplanner.service.RoomService;
+import nl.ocs.roomplanner.ui.RoomplannerUI;
 import nl.ocs.roomplanner.ui.Views;
 
-import org.springframework.beans.factory.annotation.Autowired;
-
-import com.ocs.dynamo.ui.component.DefaultVerticalLayout;
 import com.ocs.dynamo.ui.composite.form.FormOptions;
 import com.ocs.dynamo.ui.composite.layout.ServiceBasedDetailLayout;
-import com.ocs.dynamo.ui.view.BaseView;
+import com.ocs.dynamo.ui.view.LazyBaseView;
 import com.vaadin.data.Container.Filter;
 import com.vaadin.data.util.filter.Compare;
-import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
-import com.vaadin.server.VaadinSession;
 import com.vaadin.spring.annotation.SpringView;
 import com.vaadin.spring.annotation.UIScope;
-import com.vaadin.ui.VerticalLayout;
+import com.vaadin.ui.Component;
+import com.vaadin.ui.UI;
 
-@SpringView(name = Views.ROOMS_VIEW)
 @UIScope
+@SpringView(name = Views.ROOMS_VIEW)
 @SuppressWarnings("serial")
-public class RoomView extends BaseView {
+public class RoomView extends LazyBaseView {
 
-    private VerticalLayout mainLayout;
+	@Inject
+	private OrganisationService organisationService;
 
-    @Autowired
-    private OrganisationService organisationService;
+	@Inject
+	private RoomService roomService;
 
-    @Autowired
-    private RoomService roomService;
+	private ServiceBasedDetailLayout<Integer, Room, Integer, Organisation> roomLayout;
 
-    @Override
-    public void enter(ViewChangeEvent event) {
-        VerticalLayout main = new DefaultVerticalLayout(true, true);
+	@Override
+	public Component build() {
 
-        mainLayout = new VerticalLayout();
-        main.addComponent(mainLayout);
+		final Organisation organisation = ((RoomplannerUI) UI.getCurrent()).getSelectedOrganisation();
 
-        final Organisation organisation = (Organisation) VaadinSession.getCurrent().getAttribute(
-                "organisation");
+		Map<String, Filter> fieldFilters = new HashMap<>();
+		fieldFilters.put("location", new Compare.Equal("organisation", organisation));
 
-        Map<String, Filter> fieldFilters = new HashMap<>();
-        fieldFilters.put("location", new Compare.Equal("organisation", organisation));
+		FormOptions fo = new FormOptions().setShowRemoveButton(true);
+		roomLayout = new ServiceBasedDetailLayout<Integer, Room, Integer, Organisation>(roomService, organisation,
+		        organisationService, getModelFactory().getModel(Room.class), fo, null) {
 
-        FormOptions fo = new FormOptions();
-        fo.setShowRemoveButton(true);
+			@Override
+			protected Filter constructFilter() {
+				return new Compare.Equal("organisation", getParentEntity());
+			}
 
-        ServiceBasedDetailLayout<Integer, Room, Integer, Organisation> roomLayout = new ServiceBasedDetailLayout<Integer, Room, Integer, Organisation>(
-                roomService, organisation, organisationService, getModelFactory().getModel(
-                        Room.class), fo, null) {
+			@Override
+			protected Room createEntity() {
+				Room room = super.createEntity();
+				room.setOrganisation(organisation);
+				return room;
+			}
 
-            @Override
-            protected Filter constructFilter() {
-                return new Compare.Equal("organisation", getParentEntity());
-            }
+		};
+		roomLayout.setFieldFilters(fieldFilters);
+		return roomLayout;
+	}
 
-            @Override
-            protected Room createEntity() {
-                Room room = super.createEntity();
-                room.setOrganisation(organisation);
-                return room;
-            }
-
-        };
-        roomLayout.setFieldFilters(fieldFilters);
-
-        mainLayout.addComponent(roomLayout);
-
-        setCompositionRoot(main);
-    }
 }

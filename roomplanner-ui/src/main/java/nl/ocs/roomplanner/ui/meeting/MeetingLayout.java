@@ -26,99 +26,83 @@ import com.vaadin.ui.Button.ClickEvent;
 import com.vaadin.ui.Field;
 import com.vaadin.ui.Layout;
 
-public class MeetingLayout extends
-        ServiceBasedDetailLayout<Integer, Meeting, Integer, Organisation> {
+public class MeetingLayout extends ServiceBasedDetailLayout<Integer, Meeting, Integer, Organisation> {
 
-    private static final long serialVersionUID = 4983552565372330040L;
+	private static final long serialVersionUID = 4983552565372330040L;
 
-    public MeetingLayout(BaseService<Integer, Meeting> service, Organisation parentEntity,
-            BaseService<Integer, Organisation> organisationService,
-            EntityModel<Meeting> entityModel, FormOptions formOptions, SortOrder sortOrder) {
-        super(service, parentEntity, organisationService, entityModel, formOptions, sortOrder);
-    }
+	public MeetingLayout(BaseService<Integer, Meeting> service, Organisation parentEntity,
+	        BaseService<Integer, Organisation> organisationService, EntityModel<Meeting> entityModel,
+	        FormOptions formOptions, SortOrder sortOrder) {
+		super(service, parentEntity, organisationService, entityModel, formOptions, sortOrder);
+	}
 
-    @Override
-    protected Filter constructFilter() {
-        return new Compare.Equal("organisation", getParentEntity());
-    }
+	@Override
+	protected Filter constructFilter() {
+		return new Compare.Equal("organisation", getParentEntity());
+	}
 
-    @Override
-    protected Meeting createEntity() {
-        Meeting meeting = super.createEntity();
-        meeting.setOrganisation(getParentEntity());
-        return meeting;
-    }
+	@Override
+	protected Meeting createEntity() {
+		Meeting meeting = super.createEntity();
+		meeting.setOrganisation(getParentEntity());
+		return meeting;
+	}
 
-    /**
-     * 
-     * @param viewMode
-     * @return
-     */
-    @SuppressWarnings("serial")
-    private DetailsEditTable<Integer, Employee> createAttendeeTable(boolean viewMode) {
-        List<Employee> ds = new ArrayList<>();
-        ds.addAll(getSelectedItem().getAttendees());
+	@SuppressWarnings("serial")
+	private DetailsEditTable<Integer, Employee> createAttendeeTable(boolean viewMode) {
+		List<Employee> ds = new ArrayList<>();
+		ds.addAll(getSelectedItem().getAttendees());
 
-        FormOptions fo = new FormOptions();
-        fo.setShowRemoveButton(true);
-        fo.setHideAddButton(true);
-        fo.setShowSearchDialogButton(true);
+		FormOptions fo = new FormOptions().setDetailsTableSearchMode(true).setShowRemoveButton(true);
 
-        DetailsEditTable<Integer, Employee> table = new DetailsEditTable<Integer, Employee>(ds,
-                getEntityModelFactory().getModel(Employee.class), viewMode, fo) {
+		DetailsEditTable<Integer, Employee> table = new DetailsEditTable<Integer, Employee>(ds, getEntityModelFactory()
+		        .getModel(Employee.class), viewMode, fo) {
 
-            @Override
-            protected Employee createEntity() {
-                // not needed
-                return null;
-            }
+			@Override
+			protected Employee createEntity() {
+				// not needed
+				return null;
+			}
 
-            @Override
-            protected void removeEntity(Employee toRemove) {
-                MeetingLayout.this.getSelectedItem().removeAttendee(toRemove);
-            }
+			@Override
+			protected void removeEntity(Employee toRemove) {
+				MeetingLayout.this.getSelectedItem().removeAttendee(toRemove);
+			}
 
-            @Override
-            public void afterItemsSelected(Collection<Employee> selectedItems) {
-                if (selectedItems != null) {
-                    for (Employee e : selectedItems) {
-                        MeetingLayout.this.getSelectedItem().addAttendee(e);
-                    }
-                }
-            }
-        };
-        // table cannot be directly edited
-        table.setTableReadOnly(true);
-        table.setService(ServiceLocator.getService(EmployeeService.class));
-        table.setSearchDialogSortOrder(new SortOrder("lastName", SortDirection.ASCENDING));
-        return table;
-    }
+			@Override
+			public void afterItemsSelected(Collection<Employee> selectedItems) {
+				if (selectedItems != null) {
+					for (Employee e : selectedItems) {
+						MeetingLayout.this.getSelectedItem().addAttendee(e);
+					}
+				}
+			}
+		};
+		// table cannot be directly edited
+		table.setService(ServiceLocator.getService(EmployeeService.class));
+		table.setSearchDialogSortOrder(new SortOrder("lastName", SortDirection.ASCENDING));
+		return table;
+	}
 
-    @Override
-    protected Field<?> constructCustomField(EntityModel<Meeting> entityModel,
-            AttributeModel attributeModel, boolean viewMode, boolean searchMode) {
-        if ("attendees".equals(attributeModel.getName())) {
-            return createAttendeeTable(viewMode);
-        }
-        return null;
-    }
+	@Override
+	protected Field<?> constructCustomField(EntityModel<Meeting> entityModel, AttributeModel attributeModel,
+	        boolean viewMode, boolean searchMode) {
+		if ("attendees".equals(attributeModel.getName())) {
+			return createAttendeeTable(viewMode);
+		}
+		return null;
+	}
 
-    @Override
-    protected void postProcessButtonBar(Layout buttonBar) {
+	@Override
+	protected void postProcessButtonBar(Layout buttonBar) {
 
-        Button randomButton = new Button("Generate random meetings");
-        randomButton.addClickListener(new Button.ClickListener() {
+		Button randomButton = new Button("Generate random meetings");
+		randomButton.addClickListener(e -> {
+			MeetingService ms = ServiceLocator.getService(MeetingService.class);
+			ms.generateRandomMeetings(getParentEntity());
+			reload();
+		});
+		buttonBar.addComponent(randomButton);
 
-            private static final long serialVersionUID = -8368258847189827995L;
-
-            @Override
-            public void buttonClick(ClickEvent event) {
-                MeetingService ms = ServiceLocator.getService(MeetingService.class);
-                ms.generateRandomMeetings(getParentEntity());
-                reload();
-            }
-        });
-        buttonBar.addComponent(randomButton);
-
-    }
+	}
 }

@@ -4,6 +4,7 @@ import nl.ocs.roomplanner.domain.Location;
 import nl.ocs.roomplanner.domain.Organisation;
 import nl.ocs.roomplanner.service.LocationService;
 import nl.ocs.roomplanner.service.OrganisationService;
+import nl.ocs.roomplanner.ui.RoomplannerUI;
 import nl.ocs.roomplanner.ui.Views;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,10 +14,10 @@ import com.ocs.dynamo.ui.composite.layout.ServiceBasedDetailLayout;
 import com.ocs.dynamo.ui.view.LazyBaseView;
 import com.vaadin.data.Container.Filter;
 import com.vaadin.data.util.filter.Compare;
-import com.vaadin.server.VaadinSession;
 import com.vaadin.spring.annotation.SpringView;
 import com.vaadin.spring.annotation.UIScope;
 import com.vaadin.ui.Component;
+import com.vaadin.ui.UI;
 
 @UIScope
 @SpringView(name = Views.LOCATIONS_VIEW)
@@ -33,8 +34,7 @@ public class LocationView extends LazyBaseView {
 
 	@Override
 	public Component build() {
-		final Organisation organisation = (Organisation) VaadinSession.getCurrent().getAttribute("organisation");
-
+		final Organisation organisation = ((RoomplannerUI) UI.getCurrent()).getSelectedOrganisation();
 		locationLayout = new ServiceBasedDetailLayout<Integer, Location, Integer, Organisation>(locationService,
 		        organisation, organisationService, getModelFactory().getModel(Location.class), new FormOptions(), null) {
 

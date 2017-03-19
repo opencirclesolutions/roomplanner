@@ -3,11 +3,15 @@ package nl.ocs.roomplanner.ui.meeting;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
 
 import nl.ocs.roomplanner.domain.Employee;
 import nl.ocs.roomplanner.domain.Location;
@@ -21,10 +25,10 @@ import nl.ocs.roomplanner.service.RoomService;
 import nl.ocs.roomplanner.solver.RoomSolver;
 import nl.ocs.roomplanner.solver.RoomplanningSolution;
 import nl.ocs.roomplanner.solver.SolverSettings;
+import nl.ocs.roomplanner.ui.RoomplannerUI;
 import nl.ocs.roomplanner.ui.Views;
 
 import org.drools.core.util.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import com.ocs.dynamo.filter.Compare;
 import com.ocs.dynamo.service.MessageService;
@@ -36,7 +40,6 @@ import com.ocs.dynamo.ui.composite.table.InMemoryTreeTable;
 import com.ocs.dynamo.ui.view.BaseView;
 import com.ocs.dynamo.utils.DateUtils;
 import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
-import com.vaadin.server.VaadinSession;
 import com.vaadin.spring.annotation.SpringView;
 import com.vaadin.spring.annotation.UIScope;
 import com.vaadin.ui.AbstractSelect.ItemDescriptionGenerator;
@@ -52,28 +55,28 @@ import com.vaadin.ui.TextArea;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 
-@SpringView(name = Views.ASSIGN_MEETINGS_VIEW)
 @UIScope
+@SpringView(name = Views.ASSIGN_MEETINGS_VIEW)
 @SuppressWarnings("serial")
 public class AssignMeetingView extends BaseView {
 
 	private Layout mainLayout;
 
-	@Autowired
+	@Inject
 	private MessageService messageService;
 
-	@Autowired
+	@Inject
 	private MeetingService meetingService;
 
-	@Autowired
+	@Inject
 	private LocationService locationService;
 
 	private Map<Location, List<Room>> roomMap = new HashMap<>();
 
-	@Autowired
+	@Inject
 	private OrganisationService organisationService;
 
-	@Autowired
+	@Inject
 	private RoomService roomService;
 
 	private List<Location> locations;
@@ -97,13 +100,13 @@ public class AssignMeetingView extends BaseView {
 
 		setCompositionRoot(main);
 
-		final Organisation organisation = (Organisation) VaadinSession.getCurrent().getAttribute("organisation");
+		final Organisation organisation = ((RoomplannerUI) UI.getCurrent()).getSelectedOrganisation();
 
+		// get locations and group per room
 		locations = locationService.find(new Compare.Equal("organisation", organisation));
-		for (Location lo : locations) {
-			List<Room> rooms = roomService.find(new Compare.Equal("location", lo));
-			roomMap.put(lo, rooms);
-		}
+		roomMap = locations.stream().collect(
+		        Collectors.toMap(Function.identity(),
+		                (Location lo) -> roomService.find(new Compare.Equal("location", lo))));
 
 		FormLayout optionFormLayout = new FormLayout();
 		optionFormLayout.setMargin(true);
@@ -122,8 +125,6 @@ public class AssignMeetingView extends BaseView {
 		optionFormLayout.addComponent(buttonBar);
 
 		buttonBar.addComponent(createSolveButton(main, organisation));
-		buttonBar.addComponent(createConfirmButton(main, organisation));
-
 		main.addComponent(optionFormLayout);
 
 		initTable(main, meetingService.fetchByOrganisation(organisation));
@@ -132,15 +133,12 @@ public class AssignMeetingView extends BaseView {
 	private InMemoryTreeTable<Integer, Room, Integer, Location> createAssignTree(final List<Meeting> meetings,
 	        final boolean checkEmployeeDoubleBooking) {
 
-		final List<Date> dates = new ArrayList<>();
-		for (Meeting m : meetings) {
-			if (!dates.contains(m.getMeetingDate())) {
-				dates.add(m.getMeetingDate());
-			}
-		}
-		Collections.sort(dates);
+		// get unique set of dates
+		final List<Date> dates = meetings.stream().map(m -> m.getMeetingDate()).distinct().sorted()
+		        .collect(Collectors.toList());
 
-		InMemoryTreeTable<Integer, Room, Integer, Location> table = new InMemoryTreeTable<Integer, Room, Integer, Location>() {
+		InMemoryTreeTable<Integer, Room, Integer, Location> table = new InMemoryTreeTable<Integer, Room, Integer, Location>(
+		        true) {
 
 			@Override
 			protected void addContainerProperties() {
@@ -179,19 +177,12 @@ public class AssignMeetingView extends BaseView {
 
 				for (int i = 0; i < dates.size(); i++) {
 					Date d = dates.get(i);
-					for (Meeting m : meetings) {
-						StringBuilder builder = new StringBuilder();
-						if (m.getMeetingDate().equals(d) && entity.equals(m.getRoom())) {
 
-							if (builder.length() > 0) {
-								builder.append("<br/>");
-							}
-							builder.append(m.getDescription());
-						}
-
-						if (builder.length() > 0) {
-							row[2 + i] = builder.toString();
-						}
+					String md = meetings.stream()
+					        .filter(m -> m.getMeetingDate().equals(d) && entity.equals(m.getRoom()))
+					        .map(m -> m.getDescription()).collect(Collectors.joining("<br/>"));
+					if (md.length() > 0) {
+						row[2 + i] = md;
 					}
 				}
 
@@ -266,13 +257,11 @@ public class AssignMeetingView extends BaseView {
 					}
 
 					String roomCode = (String) getObjectKey(itemId.toString());
-
 					Object parentId = getParent(itemId);
 					String parentKey = getObjectKey(parentId.toString());
 
 					for (Location loc : roomMap.keySet()) {
 						if (loc.getCode().equals(parentKey)) {
-							// location found
 							for (Room room : roomMap.get(loc)) {
 								if (room.getCode().equals(roomCode)) {
 									for (Meeting m : meetings) {
@@ -313,21 +302,18 @@ public class AssignMeetingView extends BaseView {
 					Object parentId = table.getParent(itemId);
 					if (parentId != null) {
 						String parentKey = table.getObjectKey(parentId.toString());
+						Location location = locations.stream().filter(l -> l.getCode().equals(parentKey)).findFirst()
+						        .get();
 
-						for (Location loc : roomMap.keySet()) {
-							if (loc.getCode().equals(parentKey)) {
-								// location found
-								for (Room room : roomMap.get(loc)) {
-									if (room.getCode().equals(roomCode)) {
-										for (Meeting m : meetings) {
-											if (room.equals(m.getRoom()) && m.getMeetingDate().equals(d)) {
-												String error = getMeetingErrorString(m, checkEmployeeDoubleBooking,
-												        meetings);
-												return error;
-											}
-										}
-									}
-								}
+						Optional<Room> theRoom = roomMap.get(location).stream()
+						        .filter(r -> r.getCode().equals(roomCode)).findFirst();
+
+						if (theRoom.isPresent()) {
+							Optional<Meeting> theMeeting = meetings.stream()
+							        .filter(m -> m.getRoom().equals(theRoom.get()) && m.getMeetingDate().equals(d))
+							        .findAny();
+							if (theMeeting.isPresent()) {
+								return getMeetingErrorString(theMeeting.get(), checkEmployeeDoubleBooking, meetings);
 							}
 						}
 					}
@@ -339,90 +325,64 @@ public class AssignMeetingView extends BaseView {
 		return table;
 	}
 
-	private Button createConfirmButton(final Layout main, final Organisation organisation) {
-		Button confirmButton = new Button("Confirm assignments");
-		confirmButton.addClickListener(new Button.ClickListener() {
-
-			@Override
-			public void buttonClick(ClickEvent event) {
-				meetingService.confirmMeetings(organisation);
-			}
-
-		});
-		return confirmButton;
-	}
-
 	private Button createSolveButton(final Layout main, final Organisation organisation) {
 		Button solveButton = new Button("Assign meetings");
-		solveButton.addClickListener(new Button.ClickListener() {
+		solveButton.addClickListener(e -> {
+			RoomSolver solver = ServiceLocator.getService(RoomSolver.class);
+			final SolverSettings settings = new SolverSettings();
+			settings.setCheckEmployeeDoubleBooking(checkEmployee.getValue());
+			settings.setOptimizeCosts(optimizeCost.getValue());
+			settings.setOptimizeCapacity(optimizeCapacity.getValue());
 
-			private static final long serialVersionUID = -8368258847189827995L;
+			final RoomplanningSolution solution = solver.solve(organisation, settings);
+			final List<Meeting> meetings = meetingService.fetchByOrganisation(organisation);
+			initTable(main, meetings);
 
-			@Override
-			public void buttonClick(ClickEvent event) {
-				RoomSolver solver = ServiceLocator.getService(RoomSolver.class);
+			SimpleModalDialog dialog = new SimpleModalDialog(false) {
 
-				final SolverSettings settings = new SolverSettings();
-				settings.setCheckEmployeeDoubleBooking(checkEmployee.getValue());
-				settings.setOptimizeCosts(optimizeCost.getValue());
-				settings.setOptimizeCapacity(optimizeCapacity.getValue());
+				private static final long serialVersionUID = -8585232168453489812L;
 
-				final RoomplanningSolution solution = solver.solve(organisation, settings);
-				final List<Meeting> meetings = meetingService.fetchByOrganisation(organisation);
-				initTable(main, meetings);
+				@Override
+				protected String getTitle() {
+					return "Scheduling results";
+				}
 
-				SimpleModalDialog dialog = new SimpleModalDialog(false) {
+				@Override
+				protected void doBuild(Layout parent) {
 
-					private static final long serialVersionUID = -8585232168453489812L;
+					int cost = meetings.stream().filter(m -> m.getRoom() != null)
+					        .mapToInt(m -> m.getRoom().getCostPerHour()).sum();
+					int wasted = meetings.stream().filter(m -> m.getRoom() != null)
+					        .mapToInt(m -> m.getRoom().getCapacity() - m.getAttendees().size()).sum();
 
-					@Override
-					protected String getTitle() {
-						return "Scheduling results";
+					StringBuilder builder = new StringBuilder();
+					builder.append(meetings
+					        .stream()
+					        .map(m -> getMeetingErrorString(m, settings.isCheckEmployeeDoubleBooking(),
+					                solution.getMeetings())).collect(Collectors.joining()));
+
+					if (solution.getScore().getHardScore() < 0) {
+						builder.append("ERROR: NOT ALL MEETINGS COULD BE ASSIGNED!\n");
+					} else {
+						builder.append("ALL MEETINGS ASSIGNED\n");
 					}
 
-					@Override
-					protected void doBuild(Layout parent) {
-						StringBuilder builder = new StringBuilder();
-						int cost = 0;
-						int wasted = 0;
+					builder.append(String.format("Best score was: %d HARD, %d MEDIUM, %d SOFT", solution.getScore()
+					        .getHardScore(), solution.getScore().getMediumScore(), solution.getScore().getSoftScore()));
 
-						for (Meeting m : meetings) {
-							String temp = getMeetingErrorString(m, settings.isCheckEmployeeDoubleBooking(),
-							        solution.getMeetings());
-							if (!StringUtils.isEmpty(temp)) {
-								builder.append(temp);
-							}
-							if (m.getRoom() != null) {
-								cost += m.getRoom().getCostPerHour();
-								wasted += (m.getRoom().getCapacity() - m.getAttendees().size());
-							}
-						}
+					builder.append("\nTotal cost: " + cost);
+					builder.append("\nTotal wasted capacity: " + wasted);
 
-						if (solution.getScore().getHardScore() < 0) {
-							builder.append("ERROR: NOT ALL MEETINGS COULD BE ASSIGNED!\n");
-						} else {
-							builder.append("ALL MEETINGS ASSIGNED\n");
-						}
+					TextArea area = new TextArea();
+					area.setValue(builder.toString());
+					area.setSizeFull();
+					area.setRows(20);
+					parent.addComponent(area);
 
-						builder.append(String.format("Best score was: %d HARD, %d MEDIUM, %d SOFT", solution.getScore()
-						        .getHardScore(), solution.getScore().getMediumScore(), solution.getScore()
-						        .getSoftScore()));
-
-						builder.append("\nTotal cost: " + cost);
-						builder.append("\nTotal wasted capacity: " + wasted);
-
-						TextArea area = new TextArea();
-						area.setValue(builder.toString());
-						area.setSizeFull();
-						area.setRows(20);
-
-						parent.addComponent(area);
-
-					}
-				};
-				dialog.build();
-				UI.getCurrent().addWindow(dialog);
-			}
+				}
+			};
+			dialog.build();
+			UI.getCurrent().addWindow(dialog);
 		});
 		return solveButton;
 	}
@@ -474,7 +434,6 @@ public class AssignMeetingView extends BaseView {
 					}
 				}
 			}
-
 		}
 		return builder.toString();
 	}
@@ -500,11 +459,7 @@ public class AssignMeetingView extends BaseView {
 	}
 
 	private boolean isMeetingAssigned(List<Meeting> meetings) {
-		for (Meeting m : meetings) {
-			if (m.getDesiredLocation() != null) {
-				return true;
-			}
-		}
-		return false;
+		return meetings.stream().allMatch(m -> m.getDesiredLocation() != null);
+
 	}
 }

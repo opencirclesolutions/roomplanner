@@ -3,6 +3,7 @@ package nl.ocs.roomplanner.ui;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
 import javax.servlet.annotation.WebListener;
 import javax.servlet.annotation.WebServlet;
 
@@ -16,6 +17,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.context.ContextLoaderListener;
 
 import com.ocs.dynamo.service.MessageService;
+import com.ocs.dynamo.ui.BaseUI;
 import com.ocs.dynamo.ui.Observer;
 import com.ocs.dynamo.ui.Subject;
 import com.ocs.dynamo.ui.component.DefaultHorizontalLayout;
@@ -28,7 +30,6 @@ import com.vaadin.annotations.Widgetset;
 import com.vaadin.navigator.Navigator;
 import com.vaadin.server.ThemeResource;
 import com.vaadin.server.VaadinRequest;
-import com.vaadin.server.VaadinSession;
 import com.vaadin.spring.annotation.EnableVaadin;
 import com.vaadin.spring.annotation.SpringUI;
 import com.vaadin.spring.annotation.UIScope;
@@ -40,7 +41,6 @@ import com.vaadin.ui.Image;
 import com.vaadin.ui.Layout;
 import com.vaadin.ui.MenuBar;
 import com.vaadin.ui.Panel;
-import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 
 /**
@@ -49,31 +49,29 @@ import com.vaadin.ui.VerticalLayout;
  * @author bas.rutten
  * 
  */
+@UIScope
 @SpringUI()
 @Theme("light")
-@SuppressWarnings("serial")
-@UIScope
 @Widgetset(value = "com.ocs.dynamo.DynamoWidgetSet")
-public class RoomplannerUI extends UI implements Subject<MeetingDTO> {
+public class RoomplannerUI extends BaseUI implements Subject<MeetingDTO> {
 
-	// the version number - retrieved from pom file via application.properties
+	private static final long serialVersionUID = 7627794125037816693L;
+
 	@Autowired
 	@Qualifier("versionNumber")
 	private String versionNumber;
 
-	@Autowired
+	@Inject
 	private SpringViewProvider viewProvider;
 
-	@Autowired
+	@Inject
 	private MessageService messageService;
 
-	@Autowired
+	@Inject
 	private MenuService menuService;
 
-	@Autowired
+	@Inject
 	private OrganisationService organisationService;
-
-	private Navigator navigator;
 
 	private Panel viewPanel;
 
@@ -85,6 +83,8 @@ public class RoomplannerUI extends UI implements Subject<MeetingDTO> {
 	// the currently displayed layout
 	private Layout selectedLayout;
 
+	private Organisation selectedOrganisation;
+
 	private List<Observer<MeetingDTO>> observers = new ArrayList<>();
 
 	@WebListener
@@ -95,6 +95,8 @@ public class RoomplannerUI extends UI implements Subject<MeetingDTO> {
 	@WebServlet(value = "/*", asyncSupported = true)
 	@VaadinServletConfiguration(productionMode = false, ui = RoomplannerUI.class)
 	public static class Servlet extends SpringVaadinServlet {
+
+		private static final long serialVersionUID = -6324147788108224249L;
 		// do nothing
 	}
 
@@ -138,39 +140,17 @@ public class RoomplannerUI extends UI implements Subject<MeetingDTO> {
 		HorizontalLayout hCenter = new HorizontalLayout();
 		banner.addComponent(hCenter);
 
-		// FormLayout form = new FormLayout();
-		// form.setSizeUndefined();
-		//
-		// EntityModel<Organisation> orgModel =
-		// ServiceLocator.getEntityModelFactory().getModel(
-		// Organisation.class);
-		// DefaultEntityComboBox<Integer, Organisation> orgs = new
-		// DefaultEntityComboBox<>(orgModel,
-		// null, organisationService);
-		// orgs.setPrimaryStyleName("");
-		// orgs.setWidth(500, Unit.PIXELS);
-		// form.addComponent(orgs);
-		//
-		// orgs.addValueChangeListener(new ValueChangeListener() {
-		//
-		// @Override
-		// public void valueChange(ValueChangeEvent event) {
-		// VaadinSession.getCurrent().setAttribute("organisation",
-		// event.getProperty().getValue());
-		// navigator.navigateTo(Views.LOCATIONS_VIEW);
-		// }
-		// });
-
-		// HorizontalLayout buttonBar = new DefaultHorizontalLayout();
-		// form.addComponent(buttonBar);
-		//
-
 		VerticalLayout center = new DefaultVerticalLayout(true, false);
 		hCenter.addComponent(center);
 		hCenter.setComponentAlignment(center, Alignment.MIDDLE_LEFT);
 
 		// Label titleLabel = new Label("OCS Room Planner Prototype");
 		// center.addComponent(titleLabel);
+
+		List<Organisation> allOrgs = organisationService.findAll();
+		if (!allOrgs.isEmpty()) {
+			setSelectedOrganisation(allOrgs.get(3));
+		}
 
 		// navigator part
 		VerticalLayout viewLayout = new VerticalLayout();
@@ -185,23 +165,14 @@ public class RoomplannerUI extends UI implements Subject<MeetingDTO> {
 		        this.getPage());
 		stateManager.setState(Views.LOCATIONS_VIEW);
 
-		// create the navigator
-		navigator = new Navigator(this, stateManager, new Navigator.SingleComponentContainerViewDisplay(viewPanel));
-		UI.getCurrent().setNavigator(navigator);
-		navigator.addProvider(viewProvider);
-		navigator.setErrorView(new ErrorView());
+		initNavigation(viewProvider, viewPanel, Views.LOCATIONS_VIEW, true);
+		getNavigator().setErrorView(new ErrorView());
 
 		// build the menu
-		menu = menuService.constructMenu("roomplanner.menu", navigator);
+		menu = menuService.constructMenu("roomplanner.menu", getNavigator());
 		result.addComponent(menu);
 		result.addComponent(viewPanel);
 
-		List<Organisation> allOrgs = organisationService.findAll();
-		if (!allOrgs.isEmpty()) {
-			// orgs.setValue(allOrgs.get(3));
-			VaadinSession.getCurrent().setAttribute("organisation", allOrgs.get(3));
-			navigator.navigateTo(Views.LOCATIONS_VIEW);
-		}
 		return result;
 	}
 
@@ -222,8 +193,15 @@ public class RoomplannerUI extends UI implements Subject<MeetingDTO> {
 
 	@Override
 	public void notifyObservers(MeetingDTO entity) {
-		for (Observer<MeetingDTO> o : observers) {
-			o.notify(entity);
-		}
+		observers.stream().forEach(o -> o.notify(entity));
 	}
+
+	public Organisation getSelectedOrganisation() {
+		return selectedOrganisation;
+	}
+
+	public void setSelectedOrganisation(Organisation selectedOrganisation) {
+		this.selectedOrganisation = selectedOrganisation;
+	}
+
 }
