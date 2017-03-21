@@ -300,23 +300,25 @@ public class AssignMeetingView extends BaseView {
 					String roomCode = (String) table.getObjectKey(itemId.toString());
 
 					Object parentId = table.getParent(itemId);
-					if (parentId != null) {
+					if (parentId != null && d != null) {
 						String parentKey = table.getObjectKey(parentId.toString());
-						Location location = locations.stream().filter(l -> l.getCode().equals(parentKey)).findFirst()
-						        .get();
+						Optional<Location> location = locations.stream().filter(l -> l.getCode().equals(parentKey))
+						        .findFirst();
+						if (location.isPresent()) {
+							Optional<Room> theRoom = roomMap.get(location.get()).stream()
+							        .filter(r -> r.getCode().equals(roomCode)).findFirst();
 
-						Optional<Room> theRoom = roomMap.get(location).stream()
-						        .filter(r -> r.getCode().equals(roomCode)).findFirst();
-
-						if (theRoom.isPresent()) {
-							Optional<Meeting> theMeeting = meetings.stream()
-							        .filter(m -> m.getRoom().equals(theRoom.get()) && m.getMeetingDate().equals(d))
-							        .findAny();
-							if (theMeeting.isPresent()) {
-								return getMeetingErrorString(theMeeting.get(), checkEmployeeDoubleBooking, meetings);
+							if (theRoom.isPresent()) {
+								Optional<Meeting> theMeeting = meetings.stream()
+								        .filter(m -> theRoom.get().equals(m.getRoom()) && m.getMeetingDate().equals(d))
+								        .findFirst();
+								if (theMeeting.isPresent()) {
+									return getMeetingErrorString(theMeeting.get(), checkEmployeeDoubleBooking, meetings);
+								}
 							}
 						}
 					}
+
 				}
 				return null;
 			}

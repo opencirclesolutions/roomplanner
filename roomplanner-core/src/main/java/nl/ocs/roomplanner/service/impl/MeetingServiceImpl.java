@@ -46,7 +46,7 @@ public class MeetingServiceImpl extends BaseServiceImpl<Integer, Meeting> implem
 	}
 
 	@Override
-	public void generateRandomMeetings(Organisation organisation) {
+	public void generateRandomMeetings(Organisation organisation, int numberOfMeetings) {
 
 		Random random = new Random();
 		List<Location> locations = locationService.find(new Compare.Equal("organisation", organisation));
@@ -57,7 +57,7 @@ public class MeetingServiceImpl extends BaseServiceImpl<Integer, Meeting> implem
 		meetingDao.deleteForOrganisation(organisation);
 
 		List<Meeting> meetings = new ArrayList<>();
-		for (int i = 0; i < NR_OF_RANDOM_MEETINGS; i++) {
+		for (int i = 0; i <  numberOfMeetings; i++) {
 			Meeting meeting = new Meeting();
 			meeting.setOrganisation(organisation);
 			meeting.setDesiredLocation(locations.get(random.nextInt(locations.size())));

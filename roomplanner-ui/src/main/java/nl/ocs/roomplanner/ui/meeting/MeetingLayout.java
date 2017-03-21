@@ -22,13 +22,15 @@ import com.vaadin.data.sort.SortOrder;
 import com.vaadin.data.util.filter.Compare;
 import com.vaadin.shared.data.sort.SortDirection;
 import com.vaadin.ui.Button;
-import com.vaadin.ui.Button.ClickEvent;
 import com.vaadin.ui.Field;
 import com.vaadin.ui.Layout;
+import com.vaadin.ui.Slider;
 
 public class MeetingLayout extends ServiceBasedDetailLayout<Integer, Meeting, Integer, Organisation> {
 
 	private static final long serialVersionUID = 4983552565372330040L;
+
+	private Slider numberOfMeetings;
 
 	public MeetingLayout(BaseService<Integer, Meeting> service, Organisation parentEntity,
 	        BaseService<Integer, Organisation> organisationService, EntityModel<Meeting> entityModel,
@@ -96,10 +98,15 @@ public class MeetingLayout extends ServiceBasedDetailLayout<Integer, Meeting, In
 	@Override
 	protected void postProcessButtonBar(Layout buttonBar) {
 
+		numberOfMeetings = new Slider();
+		numberOfMeetings.setMin(10);
+		numberOfMeetings.setMax(100);
+		buttonBar.addComponent(numberOfMeetings);
+
 		Button randomButton = new Button("Generate random meetings");
 		randomButton.addClickListener(e -> {
 			MeetingService ms = ServiceLocator.getService(MeetingService.class);
-			ms.generateRandomMeetings(getParentEntity());
+			ms.generateRandomMeetings(getParentEntity(), numberOfMeetings.getValue().intValue());
 			reload();
 		});
 		buttonBar.addComponent(randomButton);

@@ -9,9 +9,9 @@ import com.ocs.dynamo.service.BaseService;
 
 public interface MeetingService extends BaseService<Integer, Meeting> {
 
-	public void generateRandomMeetings(Organisation organisation);
-	
+	public void generateRandomMeetings(Organisation organisation, int number);
+
 	public List<Meeting> fetchByOrganisation(Organisation organisation);
-	
+
 	public void confirmMeetings(Organisation organisation);
 }
