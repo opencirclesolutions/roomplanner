@@ -44,7 +44,6 @@ public class MeetingDaoImpl extends BaseDaoImpl<Integer, Meeting> implements Mee
 		JPADeleteClause clause = new JPADeleteClause(getEntityManager(), qMeeting);
 		clause.where(qMeeting.organisation.eq(organisation));
 		clause.execute();
-
 	}
 
 	@Override

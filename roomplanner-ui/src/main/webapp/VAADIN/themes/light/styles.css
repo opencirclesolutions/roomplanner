@@ -13003,6 +13003,24 @@ div.v-layout.v-horizontal.v-widget {
 	overflow: hidden;
 }
 
+.light div.v-horizontallayout-nested .v-formlayout-first td.v-formlayout-errorcell {
+	display: none;
+}
+
+.light div.v-horizontallayout-nested .v-formlayout-first td.v-formlayout-captioncell {
+	display: none;
+}
+
+.light div.v-horizontallayout-nested .v-formlayout-first span.v-required-field-indicator {
+	display: none;
+}
+
+.light .v-caption-required:after {
+	content: "*";
+	color: #d94560;
+	padding-left: 2px;
+}
+
 .light div.v-panel-caption {
 	background-color: #f99d34;
 	background-image: none;

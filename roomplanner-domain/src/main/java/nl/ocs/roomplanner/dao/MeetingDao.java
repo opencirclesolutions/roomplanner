@@ -12,6 +12,6 @@ public interface MeetingDao extends BaseDao<Integer, Meeting> {
 	public void deleteForOrganisation(Organisation organisation);
 
 	public List<Meeting> fetchByOrganisation(Organisation organisation);
-	
+
 	public List<Meeting> fetchUnconfirmedByOrganisation(Organisation organisation);
 }

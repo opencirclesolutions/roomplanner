@@ -15,15 +15,15 @@
 			<groupId>org.dynamoframework</groupId>
 			<artifactId>dynamo-spring</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.dynamoframework</groupId>
+			<artifactId>dynamo-test</artifactId>
+		</dependency>
 		<!-- logging -->
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
 		</dependency>
-	    <dependency>
-	      <groupId>ch.qos.logback</groupId>
-	      <artifactId>logback-classic</artifactId>
-	    </dependency>
 		<!-- Hibernate -->
 		<dependency>
 			<groupId>org.hibernate</groupId>

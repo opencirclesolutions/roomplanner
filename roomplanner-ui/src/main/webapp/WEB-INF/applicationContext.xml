@@ -20,13 +20,12 @@
 	<bean id="entityManagerFactory"
 		class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
 		<property name="persistenceUnitName" value="roomplanner" />
-		<property name="packagesToScan" value="nl.ocs.roomplanner.domain" />
+		<property name="packagesToScan" value="nl.ocs.roomplanner.domain,nl.ocs.roomplanner.domain.converter" />
 		<property name="jpaVendorAdapter">
 			<bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
 				<property name="databasePlatform" value="org.hibernate.dialect.PostgreSQLDialect" />
 				<property name="generateDdl" value="false" />
 				<property name="showSql" value="false" />
-
 			</bean>
 		</property>
 		<property name="dataSource" ref="dataSource" />

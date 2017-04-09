@@ -10,7 +10,6 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
 import com.ocs.dynamo.domain.AbstractEntity;
-import com.ocs.dynamo.domain.model.annotation.Attribute;
 import com.ocs.dynamo.domain.model.annotation.Model;
 
 @Model(displayProperty = "name")

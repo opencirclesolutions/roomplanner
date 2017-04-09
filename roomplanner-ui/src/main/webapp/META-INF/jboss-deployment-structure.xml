@@ -3,6 +3,7 @@
 	<deployment>
 		<dependencies>
 			<module name="org.hibernate"/>
+			<module name="org.slf4j"/>  
 			<!--system export="true">
 				<paths>
 					<path name="com/sun/nio/file"/>

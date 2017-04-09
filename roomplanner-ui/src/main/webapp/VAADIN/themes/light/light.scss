@@ -32,6 +32,24 @@ $v-layout-margin-left: 10px;
   @include valo;
   // Insert your own theme rules here
   
+  div.v-horizontallayout-nested .v-formlayout-first td.v-formlayout-errorcell {
+     display: none;
+  }  
+  
+  div.v-horizontallayout-nested .v-formlayout-first td.v-formlayout-captioncell {
+     display: none;
+  }  
+  
+  div.v-horizontallayout-nested .v-formlayout-first span.v-required-field-indicator {
+     display: none;
+  }
+  
+  .v-caption-required:after {
+    content: "*"; 
+    color: #d94560;
+    padding-left:2px;
+  }  
+  
   div.v-panel-caption {
   	background-color: #f99d34;
   	background-image: none;

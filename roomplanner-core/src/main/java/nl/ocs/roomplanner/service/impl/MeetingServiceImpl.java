@@ -1,11 +1,20 @@
 package nl.ocs.roomplanner.service.impl;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Random;
 
 import javax.inject.Inject;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.ocs.dynamo.dao.BaseDao;
+import com.ocs.dynamo.filter.Compare;
+import com.ocs.dynamo.service.impl.BaseServiceImpl;
+import com.ocs.dynamo.utils.DateUtils;
 
 import nl.ocs.roomplanner.dao.MeetingDao;
 import nl.ocs.roomplanner.domain.Employee;
@@ -17,84 +26,73 @@ import nl.ocs.roomplanner.service.EmployeeService;
 import nl.ocs.roomplanner.service.LocationService;
 import nl.ocs.roomplanner.service.MeetingService;
 
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.ocs.dynamo.dao.BaseDao;
-import com.ocs.dynamo.filter.Compare;
-import com.ocs.dynamo.service.impl.BaseServiceImpl;
-import com.ocs.dynamo.utils.DateUtils;
-
 @Service("meetingService")
 @Transactional
 public class MeetingServiceImpl extends BaseServiceImpl<Integer, Meeting> implements MeetingService {
 
-	private static final int NR_OF_RANDOM_MEETINGS = 35;
+    @Inject
+    private MeetingDao meetingDao;
 
-	@Inject
-	private MeetingDao meetingDao;
+    @Inject
+    private LocationService locationService;
 
-	@Inject
-	private LocationService locationService;
+    @Inject
+    private EmployeeService employeeService;
 
-	@Inject
-	private EmployeeService employeeService;
+    @Override
+    protected BaseDao<Integer, Meeting> getDao() {
+        return meetingDao;
+    }
 
-	@Override
-	protected BaseDao<Integer, Meeting> getDao() {
-		return meetingDao;
-	}
+    @Override
+    public void generateRandomMeetings(Organisation organisation, int numberOfMeetings) {
 
-	@Override
-	public void generateRandomMeetings(Organisation organisation, int numberOfMeetings) {
+        Random random = new Random();
+        List<Location> locations = locationService.find(new Compare.Equal("organisation", organisation));
+        List<Employee> employees = employeeService.findAll();
 
-		Random random = new Random();
-		List<Location> locations = locationService.find(new Compare.Equal("organisation", organisation));
-		List<Employee> employees = employeeService.findAll();
+        LocalDate startDate = LocalDate.now().plusDays(7);
 
-		Date startDate = org.apache.commons.lang.time.DateUtils.addDays(new Date(), 7);
+        meetingDao.deleteForOrganisation(organisation);
 
-		meetingDao.deleteForOrganisation(organisation);
+        List<Meeting> meetings = new ArrayList<>();
+        for (int i = 0; i < numberOfMeetings; i++) {
+            Meeting meeting = new Meeting();
+            meeting.setOrganisation(organisation);
+            meeting.setDesiredLocation(locations.get(random.nextInt(locations.size())));
+            meeting.setMeetingDate(startDate.plusDays(random.nextInt(7)));
+            meeting.setPriority(PriorityType.values()[random.nextInt(4)]);
 
-		List<Meeting> meetings = new ArrayList<>();
-		for (int i = 0; i <  numberOfMeetings; i++) {
-			Meeting meeting = new Meeting();
-			meeting.setOrganisation(organisation);
-			meeting.setDesiredLocation(locations.get(random.nextInt(locations.size())));
+            meeting.setWhiteboard(random.nextBoolean());
+            meeting.setVideoConferencing(false);
+            meeting.setPhoneConferencing(false);
+            meeting.setStartTime(LocalTime.of(12, 12));
 
-			Date meetingDate = org.apache.commons.lang.time.DateUtils.addDays(startDate, random.nextInt(7));
-			meeting.setMeetingDate(meetingDate);
-			meeting.setPriority(PriorityType.values()[random.nextInt(4)]);
+            int attendeeCount = 2 + random.nextInt(3);
+            for (int j = 0; j < attendeeCount; j++) {
+                Employee emp = employees.get(random.nextInt(employees.size()));
+                meeting.addAttendee(emp);
+            }
 
-			meeting.setWhiteboard(random.nextBoolean());
-			meeting.setVideoConferencing(false);
-			meeting.setPhoneConferencing(false);
+            meeting.setDescription("Meeting " + (i + 1) + " (" + meeting.getDesiredLocation().getName() + ", "
+                    + DateUtils.formatDate(meeting.getMeetingDate(), "dd-MM-yyyy") + ", "
+                    + meeting.getNumberOfAttendees() + " attendees)");
 
-			int attendeeCount = 2 + random.nextInt(3);
-			for (int j = 0; j < attendeeCount; j++) {
-				Employee emp = employees.get(random.nextInt(employees.size()));
-				meeting.addAttendee(emp);
-			}
+            meetings.add(meeting);
+        }
+        meetingDao.save(meetings);
+    }
 
-			meeting.setDescription("Meeting " + (i + 1) + " (" + meeting.getDesiredLocation().getName() + ", "
-			        + DateUtils.formatDate(meeting.getMeetingDate(), "dd-MM-yyyy") + ", "
-			        + meeting.getNumberOfAttendees() + " attendees)");
+    public List<Meeting> fetchByOrganisation(Organisation organisation) {
+        return meetingDao.fetchByOrganisation(organisation);
+    }
 
-			meetings.add(meeting);
-		}
-		meetingDao.save(meetings);
-	}
-
-	public List<Meeting> fetchByOrganisation(Organisation organisation) {
-		return meetingDao.fetchByOrganisation(organisation);
-	}
-
-	@Override
-	public void confirmMeetings(Organisation organisation) {
-		List<Meeting> meetings = meetingDao.fetchUnconfirmedByOrganisation(organisation);
-		for (Meeting m : meetings) {
-			m.setConfirmed(true);
-		}
-	}
+    @Override
+    public void confirmMeetings(Organisation organisation) {
+        List<Meeting> meetings = meetingDao.fetchUnconfirmedByOrganisation(organisation);
+        for (Meeting m : meetings) {
+            m.setConfirmed(true);
+        }
+    }
 
 }

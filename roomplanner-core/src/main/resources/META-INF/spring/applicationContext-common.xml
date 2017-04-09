@@ -4,7 +4,7 @@
 	xmlns:context="http://www.springframework.org/schema/context"
 	xmlns:osgi="http://www.springframework.org/schema/osgi" xmlns:aop="http://www.springframework.org/schema/aop"
 	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:util="http://www.springframework.org/schema/util"
-	xmlns:tx="http://www.springframework.org/schema/tx"  
+	xmlns:tx="http://www.springframework.org/schema/tx"
 	xsi:schemaLocation="
        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
@@ -18,7 +18,7 @@
 
 	<aop:aspectj-autoproxy></aop:aspectj-autoproxy>
 
-	<context:component-scan base-package="nl.ocs.roomplanner" />
+	<context:component-scan base-package="nl.ocs.roomplanner,com.ocs.dynamo.ui.composite.table.export" />
 
 	<tx:annotation-driven transaction-manager="transactionManager" />
 
@@ -60,5 +60,6 @@
 	<bean id="permissionChecker" class="com.ocs.dynamo.ui.auth.DefaultPermissionCheckerImpl">
 		<constructor-arg value="nl.ocs.roomplanner" />
 	</bean>
+
 
 </beans>

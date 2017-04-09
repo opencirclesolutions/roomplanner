@@ -16,6 +16,7 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
 import com.ocs.dynamo.domain.AbstractEntity;
+import com.ocs.dynamo.domain.model.NumberSelectMode;
 import com.ocs.dynamo.domain.model.annotation.Attribute;
 import com.ocs.dynamo.domain.model.annotation.AttributeOrder;
 import com.ocs.dynamo.domain.model.annotation.Model;
@@ -53,6 +54,9 @@ public class Room extends AbstractEntity<Integer> {
 	private String name;
 
 	@NotNull
+	@Attribute(numberSelectMode = NumberSelectMode.SLIDER)
+	@Min(0)
+	@Max(100)
 	private Integer capacity;
 
 	@Attribute(displayName = "Cost")

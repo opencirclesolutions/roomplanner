@@ -1,5 +1,8 @@
 package nl.ocs.roomplanner.domain;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -14,6 +17,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
+import javax.persistence.PrePersist;
+import javax.persistence.PreUpdate;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
@@ -21,290 +26,308 @@ import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
-import nl.ocs.roomplanner.domain.comparator.MeetingSizeComparator;
-
 import org.optaplanner.core.api.domain.entity.PlanningEntity;
 import org.optaplanner.core.api.domain.variable.PlanningVariable;
 
 import com.ocs.dynamo.domain.AbstractEntity;
-import com.ocs.dynamo.domain.model.AttributeSelectMode;
 import com.ocs.dynamo.domain.model.VisibilityType;
 import com.ocs.dynamo.domain.model.annotation.Attribute;
 import com.ocs.dynamo.domain.model.annotation.AttributeOrder;
 import com.ocs.dynamo.domain.model.annotation.Model;
 import com.ocs.dynamo.domain.validator.URL;
 
+import nl.ocs.roomplanner.domain.comparator.MeetingSizeComparator;
+
 @PlanningEntity(difficultyComparatorClass = MeetingSizeComparator.class)
 @Entity
 @Table(name = "meetings")
-@AttributeOrder(attributeNames = { "description", "desiredLocation", "meetingDate", "startTime", "endTime",
-        "attendees", "whiteboard", "videoConferencing", "phoneConferencing", "priority" })
+@AttributeOrder(attributeNames = { "description", "desiredLocation", "meetingDate", "startTime", "endTime", "attendees",
+        "whiteboard", "videoConferencing", "phoneConferencing", "priority" })
 @Model(displayProperty = "description")
 public class Meeting extends AbstractEntity<Integer> {
 
-	private static final long serialVersionUID = 8516781577227355815L;
+    private static final long serialVersionUID = 8516781577227355815L;
 
-	@Id
-	@SequenceGenerator(name = "meetings_id_seq", sequenceName = "meetings_id_seq", allocationSize = 1)
-	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "meetings_id_seq")
-	private Integer id;
+    @Id
+    @SequenceGenerator(name = "meetings_id_seq", sequenceName = "meetings_id_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "meetings_id_seq")
+    private Integer id;
 
-	@Override
-	public Integer getId() {
-		return id;
-	}
+    @Override
+    public Integer getId() {
+        return id;
+    }
 
-	@Override
-	public void setId(Integer id) {
-		this.id = id;
-	}
+    @Override
+    public void setId(Integer id) {
+        this.id = id;
+    }
 
-	@Size(max = 200)
-	@Attribute(searchable = true)
-	private String description;
+    @Size(max = 200)
+    @Attribute(searchable = true)
+    private String description;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "desired_location_id")
-	@Attribute(complexEditable = true, searchable = true, selectMode = AttributeSelectMode.LOOKUP, displayName = "Location")
-	private Location desiredLocation;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "desired_location_id")
+    @Attribute(complexEditable = true, searchable = true, displayName = "Location")
+    private Location desiredLocation;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "assigned_location_id")
-	private Location assignedLocation;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assigned_location_id")
+    private Location assignedLocation;
 
-	@Attribute(searchable = true, trueRepresentation = "You bet", falseRepresentation = "No way")
-	private Boolean whiteboard = Boolean.FALSE;
+    @Attribute(searchable = true, trueRepresentation = "You bet", falseRepresentation = "No way")
+    private Boolean whiteboard = Boolean.FALSE;
 
-	@Column(name = "video_conferencing")
-	private Boolean videoConferencing = Boolean.FALSE;
+    @Column(name = "video_conferencing")
+    private Boolean videoConferencing = Boolean.FALSE;
 
-	@Column(name = "phone_conferencing")
-	private Boolean phoneConferencing = Boolean.FALSE;
+    @Column(name = "phone_conferencing")
+    private Boolean phoneConferencing = Boolean.FALSE;
 
-	@Temporal(TemporalType.TIME)
-	@Column(name = "start_time")
-	private Date startTime;
+    @Attribute(searchable = true)
+    @Column(name = "start_time")
+    private LocalTime startTime;
 
-	@Temporal(TemporalType.TIME)
-	@Column(name = "end_time")
-	private Date endTime;
+    @Temporal(TemporalType.TIME)
+    @Column(name = "end_time")
+    private Date endTime;
 
-	@NotNull
-	@Column(name = "priority")
-	private PriorityType priority;
+    @NotNull
+    @Column(name = "priority")
+    private PriorityType priority;
 
-	@Attribute(defaultValue = "01-01-2016")
-	@NotNull
-	@Temporal(TemporalType.DATE)
-	@Column(name = "meeting_date")
-	private Date meetingDate;
+    @Attribute(defaultValue = "01-01-2018", searchable = true, groupTogetherWith = { "startTime", "endTime" })
+    @NotNull
+    @Column(name = "meeting_date")
+    private LocalDate meetingDate;
 
-	@Attribute(readOnly = true)
-	private Boolean assigned = Boolean.FALSE;
+    @Column(name = "start_date_time")
+    @Attribute(displayFormat = "dd/MM/yyy HH.mm.ss", searchable = true)
+    private LocalDateTime startDateTime;
 
-	@Attribute(complexEditable = true, searchable = true)
-	@ManyToMany(fetch = FetchType.LAZY)
-	@JoinTable(name = "meetings_employees", joinColumns = @JoinColumn(name = "meeting_id"), inverseJoinColumns = @JoinColumn(name = "employee_id"))
-	private Set<Employee> attendees = new HashSet<>();
+    @Attribute(readOnly = true)
+    private Boolean assigned = Boolean.FALSE;
 
-	@ManyToOne(fetch = FetchType.EAGER)
-	@JoinColumn(name = "room_id")
-	private Room room;
+    @Attribute(complexEditable = true, searchable = true)
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "meetings_employees", joinColumns = @JoinColumn(name = "meeting_id"), inverseJoinColumns = @JoinColumn(name = "employee_id"))
+    private Set<Employee> attendees = new HashSet<>();
 
-	@Attribute(visible = VisibilityType.HIDE)
-	@Column(name = "exchange_item_id")
-	private String exchangeItemId;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "room_id")
+    private Room room;
 
-	@Attribute(visible = VisibilityType.HIDE)
-	@Column(name = "exchange_change_key")
-	private String exchangeChangeKey;
+    @Attribute(visible = VisibilityType.HIDE)
+    @Column(name = "exchange_item_id")
+    private String exchangeItemId;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "organisation_id")
-	@Attribute(searchable = true, multipleSearch = true)
-	private Organisation organisation;
+    @Attribute(visible = VisibilityType.HIDE)
+    @Column(name = "exchange_change_key")
+    private String exchangeChangeKey;
 
-	@Attribute(readOnly = true)
-	private Boolean confirmed = Boolean.FALSE;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "organisation_id")
+    @Attribute(searchable = true, multipleSearch = true, requiredForSearching = true)
+    private Organisation organisation;
 
-	@URL
-	@Attribute(showInTable = VisibilityType.SHOW, url = true)
-	@Size(max = 255)
-	private String url;
+    @Attribute(readOnly = true)
+    private Boolean confirmed = Boolean.FALSE;
 
-	public Location getDesiredLocation() {
-		return desiredLocation;
-	}
+    @URL
+    @Attribute(showInTable = VisibilityType.SHOW, url = true)
+    @Size(max = 255)
+    private String url;
 
-	public void setDesiredLocation(Location desiredLocation) {
-		this.desiredLocation = desiredLocation;
-	}
+    public Location getDesiredLocation() {
+        return desiredLocation;
+    }
 
-	public Location getAssignedLocation() {
-		return assignedLocation;
-	}
+    public void setDesiredLocation(Location desiredLocation) {
+        this.desiredLocation = desiredLocation;
+    }
 
-	public void setAssignedLocation(Location assignedLocation) {
-		this.assignedLocation = assignedLocation;
-	}
+    public Location getAssignedLocation() {
+        return assignedLocation;
+    }
 
-	public Boolean getWhiteboard() {
-		return whiteboard;
-	}
+    public void setAssignedLocation(Location assignedLocation) {
+        this.assignedLocation = assignedLocation;
+    }
 
-	public void setWhiteboard(Boolean whiteboard) {
-		this.whiteboard = whiteboard;
-	}
+    public Boolean getWhiteboard() {
+        return whiteboard;
+    }
 
-	public Boolean getVideoConferencing() {
-		return videoConferencing;
-	}
+    public void setWhiteboard(Boolean whiteboard) {
+        this.whiteboard = whiteboard;
+    }
 
-	public void setVideoConferencing(Boolean videoConferencing) {
-		this.videoConferencing = videoConferencing;
-	}
+    public Boolean getVideoConferencing() {
+        return videoConferencing;
+    }
 
-	public Boolean getPhoneConferencing() {
-		return phoneConferencing;
-	}
+    public void setVideoConferencing(Boolean videoConferencing) {
+        this.videoConferencing = videoConferencing;
+    }
 
-	public void setPhoneConferencing(Boolean phoneConferencing) {
-		this.phoneConferencing = phoneConferencing;
-	}
+    public Boolean getPhoneConferencing() {
+        return phoneConferencing;
+    }
 
-	public PriorityType getPriority() {
-		return priority;
-	}
+    public void setPhoneConferencing(Boolean phoneConferencing) {
+        this.phoneConferencing = phoneConferencing;
+    }
 
-	public void setPriority(PriorityType priority) {
-		this.priority = priority;
-	}
+    public PriorityType getPriority() {
+        return priority;
+    }
 
-	public Boolean getAssigned() {
-		return assigned;
-	}
+    public void setPriority(PriorityType priority) {
+        this.priority = priority;
+    }
 
-	public void setAssigned(Boolean assigned) {
-		this.assigned = assigned;
-	}
+    public Boolean getAssigned() {
+        return assigned;
+    }
 
-	public Employee addAttendee(Employee employee) {
-		this.attendees.add(employee);
-		return employee;
-	}
+    public void setAssigned(Boolean assigned) {
+        this.assigned = assigned;
+    }
 
-	public Employee removeAttendee(Employee employee) {
-		this.attendees.remove(employee);
-		return employee;
-	}
+    public Employee addAttendee(Employee employee) {
+        this.attendees.add(employee);
+        return employee;
+    }
 
-	public Set<Employee> getAttendees() {
-		return attendees;
-	}
+    public Employee removeAttendee(Employee employee) {
+        this.attendees.remove(employee);
+        return employee;
+    }
 
-	public void setAttendees(Set<Employee> attendees) {
-		this.attendees = attendees;
-	}
+    public Set<Employee> getAttendees() {
+        return attendees;
+    }
 
-	public String getDescription() {
-		return description;
-	}
+    public void setAttendees(Set<Employee> attendees) {
+        this.attendees = attendees;
+    }
 
-	public void setDescription(String description) {
-		this.description = description;
-	}
+    public String getDescription() {
+        return description;
+    }
 
-	@Attribute(readOnly = true, sortable = false)
-	public Integer getNumberOfAttendees() {
-		return attendees == null ? 0 : attendees.size();
-	}
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
-	@PlanningVariable(valueRangeProviderRefs = { "roomRange" })
-	public Room getRoom() {
-		return room;
-	}
+    @Attribute(readOnly = true, sortable = false)
+    public Integer getNumberOfAttendees() {
+        return attendees == null ? 0 : attendees.size();
+    }
 
-	public void setRoom(Room room) {
-		this.room = room;
-	}
+    @PlanningVariable(valueRangeProviderRefs = { "roomRange" })
+    public Room getRoom() {
+        return room;
+    }
 
-	public Date getMeetingDate() {
-		return meetingDate;
-	}
+    public void setRoom(Room room) {
+        this.room = room;
+    }
 
-	public void setMeetingDate(Date meetingDate) {
-		this.meetingDate = meetingDate;
-	}
+    public LocalDate getMeetingDate() {
+        return meetingDate;
+    }
 
-	public String getExchangeItemId() {
-		return exchangeItemId;
-	}
+    public void setMeetingDate(LocalDate meetingDate) {
+        this.meetingDate = meetingDate;
+    }
 
-	public void setExchangeItemId(String exchangeItemId) {
-		this.exchangeItemId = exchangeItemId;
-	}
+    public String getExchangeItemId() {
+        return exchangeItemId;
+    }
 
-	/**
-	 * The meeting ID as a string (for Optaplanner purposes)
-	 * 
-	 * @return
-	 */
-	@Attribute(visible = VisibilityType.HIDE)
-	public String getMeetingId() {
-		return Integer.toString(id);
-	}
+    public void setExchangeItemId(String exchangeItemId) {
+        this.exchangeItemId = exchangeItemId;
+    }
 
-	@Attribute(visible = VisibilityType.HIDE)
-	public int getPriorityAsInteger() {
-		return priority.ordinal() + 1;
-	}
+    /**
+     * The meeting ID as a string (for Optaplanner purposes)
+     * 
+     * @return
+     */
+    @Attribute(visible = VisibilityType.HIDE)
+    public String getMeetingId() {
+        return Integer.toString(id);
+    }
 
-	public Organisation getOrganisation() {
-		return organisation;
-	}
+    @Attribute(visible = VisibilityType.HIDE)
+    public int getPriorityAsInteger() {
+        return priority.ordinal() + 1;
+    }
 
-	public void setOrganisation(Organisation organisation) {
-		this.organisation = organisation;
-	}
+    public Organisation getOrganisation() {
+        return organisation;
+    }
 
-	public String getExchangeChangeKey() {
-		return exchangeChangeKey;
-	}
+    public void setOrganisation(Organisation organisation) {
+        this.organisation = organisation;
+    }
 
-	public void setExchangeChangeKey(String exchangeChangeKey) {
-		this.exchangeChangeKey = exchangeChangeKey;
-	}
+    public String getExchangeChangeKey() {
+        return exchangeChangeKey;
+    }
 
-	public Boolean getConfirmed() {
-		return confirmed;
-	}
+    public void setExchangeChangeKey(String exchangeChangeKey) {
+        this.exchangeChangeKey = exchangeChangeKey;
+    }
 
-	public void setConfirmed(Boolean confirmed) {
-		this.confirmed = confirmed;
-	}
+    public Boolean getConfirmed() {
+        return confirmed;
+    }
 
-	public Date getStartTime() {
-		return startTime;
-	}
+    public void setConfirmed(Boolean confirmed) {
+        this.confirmed = confirmed;
+    }
 
-	public void setStartTime(Date startTime) {
-		this.startTime = startTime;
-	}
+    public LocalTime getStartTime() {
+        return startTime;
+    }
 
-	public Date getEndTime() {
-		return endTime;
-	}
+    public void setStartTime(LocalTime startTime) {
+        this.startTime = startTime;
+    }
 
-	public void setEndTime(Date endTime) {
-		this.endTime = endTime;
-	}
+    public Date getEndTime() {
+        return endTime;
+    }
 
-	public String getUrl() {
-		return url;
-	}
+    public void setEndTime(Date endTime) {
+        this.endTime = endTime;
+    }
 
-	public void setUrl(String url) {
-		this.url = url;
-	}
+    public String getUrl() {
+        return url;
+    }
 
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public LocalDateTime getStartDateTime() {
+        return startDateTime;
+    }
+
+    public void setStartDateTime(LocalDateTime startDateTime) {
+        this.startDateTime = startDateTime;
+    }
+
+    @PrePersist
+    @PreUpdate
+    public void setStartDateTime() {
+        this.startDateTime = this.meetingDate.atStartOfDay();
+        if (this.startTime != null) {
+            this.startDateTime = this.startTime.atDate(this.meetingDate);
+        }
+    }
 }

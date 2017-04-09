@@ -23,7 +23,7 @@ import com.ocs.dynamo.domain.model.annotation.Attribute;
 import com.ocs.dynamo.domain.model.annotation.AttributeOrder;
 import com.ocs.dynamo.domain.model.annotation.Model;
 
-@Model(displayProperty = "codeAndName", sortOrder = "code DESC")
+@Model(displayProperty = "codeAndName", sortOrder = "code ASC")
 @Entity
 @Table(name = "locations")
 @AttributeOrder(attributeNames = { "code", "name", "street", "houseNumber", "city" })
