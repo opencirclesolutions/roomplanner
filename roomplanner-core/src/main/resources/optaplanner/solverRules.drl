@@ -98,7 +98,7 @@ rule "avoidOvercapacity"
         SolverSettings(optimizeCapacity == true)
         $room: Room($capacity: capacity)
         $meeting: Meeting($numberOfAttendees: numberOfAttendees, room == $room, numberOfAttendees < $capacity)
-               
+      
     then
         scoreHolder.addMediumConstraintMatch(kcontext, 100 *  ($numberOfAttendees.intValue() - $capacity.intValue()));
 end 

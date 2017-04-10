@@ -164,7 +164,8 @@ public class AssignMeetingView extends BaseView {
             @Override
             protected void fillChildRow(Object[] row, Room entity, Location parentEntity) {
                 row[0] = entity.getCode();
-                row[1] = entity.getName() + " (" + entity.getCostPerHour() + " )";
+                row[1] = entity.getName() + " (cost: " + entity.getCostPerHour() + "; capacity=" + entity.getCapacity()
+                        + "  )";
 
                 for (int i = 0; i < dates.size(); i++) {
                     LocalDate d = dates.get(i);
@@ -239,13 +240,7 @@ public class AssignMeetingView extends BaseView {
             public String getMeetingErrorMessage(Object itemId, Object propertyId) {
                 if (propertyId != null && propertyId.toString().matches("\\d+.*")) {
                     // date property
-                    SimpleDateFormat sf = new SimpleDateFormat("dd-MM-yyyy");
-                    Date d;
-                    try {
-                        d = sf.parse(propertyId.toString());
-                    } catch (ParseException e) {
-                        return null;
-                    }
+                    LocalDate d = DateUtils.createLocalDate(propertyId.toString(), "dd-MM-yyyy");
 
                     String roomCode = (String) getObjectKey(itemId.toString());
                     Object parentId = getParent(itemId);
@@ -280,14 +275,8 @@ public class AssignMeetingView extends BaseView {
 
                 if (propertyId != null && propertyId.toString().matches("\\d+.*")) {
                     // date property
-                    SimpleDateFormat sf = new SimpleDateFormat("dd-MM-yyyy");
-                    Date d;
-                    try {
-                        d = sf.parse(propertyId.toString());
-                    } catch (ParseException e) {
-                        return null;
-                    }
 
+                    LocalDate d = DateUtils.createLocalDate(propertyId.toString(), "dd-MM-yyyy");
                     String roomCode = (String) table.getObjectKey(itemId.toString());
 
                     Object parentId = table.getParent(itemId);

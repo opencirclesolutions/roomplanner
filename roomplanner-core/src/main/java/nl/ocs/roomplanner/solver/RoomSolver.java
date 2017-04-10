@@ -27,52 +27,48 @@ import com.ocs.dynamo.filter.Compare;
 @Service("roomSolver")
 public class RoomSolver {
 
-	private static final Logger LOGGER = Logger.getLogger(RoomSolver.class);
+    private static final Logger LOGGER = Logger.getLogger(RoomSolver.class);
 
-	@Autowired
-	private RoomService roomService;
+    @Autowired
+    private RoomService roomService;
 
-	@Autowired
-	private MeetingService meetingService;
+    @Autowired
+    private MeetingService meetingService;
 
-	@Autowired
-	private EmployeeService employeeService;
+    @Autowired
+    private EmployeeService employeeService;
 
-	public RoomplanningSolution solve(Organisation organisation, SolverSettings settings) {
-		List<Integer> roomIds = roomService
-		        .findIds(new Compare.Equal("organisation", organisation), (SortOrder[]) null);
-		List<Room> rooms = roomService.fetchByIds(roomIds, new FetchJoinInformation[] { new FetchJoinInformation(
-		        "location") });
+    public RoomplanningSolution solve(Organisation organisation, SolverSettings settings) {
+        List<Integer> roomIds = roomService.findIds(new Compare.Equal("organisation", organisation),
+                (SortOrder[]) null);
+        List<Room> rooms = roomService.fetchByIds(roomIds,
+                new FetchJoinInformation[] { new FetchJoinInformation("location") });
 
-		// find all meetings
-		List<Integer> ids = meetingService.findIds(new Compare.Equal("organisation", organisation), (SortOrder[]) null);
-		List<Meeting> meetings = meetingService.fetchByIds(ids, new FetchJoinInformation[] {
-		        new FetchJoinInformation("attendees"), new FetchJoinInformation("desiredLocation") });
+        // find all meetings
+        List<Integer> ids = meetingService.findIds(new Compare.Equal("organisation", organisation), (SortOrder[]) null);
+        List<Meeting> meetings = meetingService.fetchByIds(ids, new FetchJoinInformation[] {
+                new FetchJoinInformation("attendees"), new FetchJoinInformation("desiredLocation") });
 
-		RoomplanningSolution solution = new RoomplanningSolution(rooms, meetings, employeeService.findAll());
-		solution.setSolverSettings(settings);
-		SolverFactory<RoomplanningSolution> factory = SolverFactory
-		        .createFromXmlResource("optaplanner/solverConfig.xml");
+        RoomplanningSolution solution = new RoomplanningSolution(rooms, meetings, employeeService.findAll());
+        solution.setSolverSettings(settings);
+        SolverFactory<RoomplanningSolution> factory = SolverFactory
+                .createFromXmlResource("optaplanner/solverConfig.xml");
 
-		Solver<RoomplanningSolution> solver = factory.buildSolver();
-		solver.solve(solution);
+        Solver<RoomplanningSolution> solver = factory.buildSolver();
+        solver.solve(solution);
 
-		RoomplanningSolution best = solver.getBestSolution();
+        RoomplanningSolution best = solver.getBestSolution();
 
-		int cost = 0;
-		for (Meeting m : best.getMeetings()) {
-			LOGGER.info("Assigned meeting " + m.getDescription() + " (" + m.getNumberOfAttendees() + ") to room "
-			        + m.getRoom().getCode() + " (" + m.getRoom().getCapacity() + ")");
-			if (m.getRoom() != null) {
-				m.setAssigned(true);
-				cost += m.getRoom().getCostPerHour();
-			}
-		}
-		LOGGER.info("Total cost: " + cost);
+        int cost = best.getMeetings().stream().filter(m -> m.getRoom() != null).mapToInt(m -> m.getRoom().getCostPerHour()).sum();
+        LOGGER.info("Total cost: " + cost);
 
-		List<Meeting> savedMeetings = meetingService.save(best.getMeetings());
-		best.setMeetings(savedMeetings);
+        int wasted = best.getMeetings().stream().filter(m -> m.getRoom() != null)
+                .mapToInt(m -> m.getRoom().getCapacity() - m.getAttendees().size()).sum();
+        LOGGER.info("Total wasted capacity: " + wasted);
 
-		return best;
-	}
+        List<Meeting> savedMeetings = meetingService.save(best.getMeetings());
+        best.setMeetings(savedMeetings);
+
+        return best;
+    }
 }
