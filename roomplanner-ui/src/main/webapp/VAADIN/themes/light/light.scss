@@ -213,4 +213,16 @@ $v-layout-margin-left: 10px;
    td.v-table-cell-content-divider {
   	 border-top: 1px solid black;
    }
+   
+   .v-slot.v-slot-nested {
+     width: 200px;
+   }
+   
+   .v-slot.v-slot-nested div.v-filterselect {
+      width: 195px;
+   }
+    
+   .v-slot.v-slot-nested .v-select-select {
+      width: 195px;
+   }
 }

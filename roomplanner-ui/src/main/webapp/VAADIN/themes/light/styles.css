@@ -13182,3 +13182,15 @@ div.v-layout.v-horizontal.v-widget {
 .light td.v-table-cell-content-divider {
 	border-top: 1px solid black;
 }
+
+.light .v-slot.v-slot-nested {
+	width: 200px;
+}
+
+.light .v-slot.v-slot-nested div.v-filterselect {
+	width: 195px;
+}
+
+.light .v-slot.v-slot-nested .v-select-select {
+	width: 195px;
+}

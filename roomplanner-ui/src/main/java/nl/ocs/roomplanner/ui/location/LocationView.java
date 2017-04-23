@@ -24,33 +24,36 @@ import com.vaadin.ui.UI;
 @SuppressWarnings("serial")
 public class LocationView extends LazyBaseView {
 
-	@Autowired
-	private OrganisationService organisationService;
+    @Autowired
+    private OrganisationService organisationService;
 
-	@Autowired
-	private LocationService locationService;
+    @Autowired
+    private LocationService locationService;
 
-	private ServiceBasedDetailLayout<Integer, Location, Integer, Organisation> locationLayout;
+    private ServiceBasedDetailLayout<Integer, Location, Integer, Organisation> locationLayout;
 
-	@Override
-	public Component build() {
-		final Organisation organisation = ((RoomplannerUI) UI.getCurrent()).getSelectedOrganisation();
-		locationLayout = new ServiceBasedDetailLayout<Integer, Location, Integer, Organisation>(locationService,
-		        organisation, organisationService, getModelFactory().getModel(Location.class), new FormOptions(), null) {
+    @Override
+    public Component build() {
+        final Organisation organisation = ((RoomplannerUI) UI.getCurrent()).getSelectedOrganisation();
+        FormOptions fo = new FormOptions();
+        fo.setShowRemoveButton(true);
 
-			@Override
-			protected Filter constructFilter() {
-				return new Compare.Equal("organisation", organisation);
-			}
+        locationLayout = new ServiceBasedDetailLayout<Integer, Location, Integer, Organisation>(locationService,
+                organisation, organisationService, getModelFactory().getModel(Location.class), fo, null) {
 
-			@Override
-			protected Location createEntity() {
-				Location location = super.createEntity();
-				location.setOrganisation(getParentEntity());
-				return location;
-			}
-		};
-		return locationLayout;
-	}
+            @Override
+            protected Filter constructFilter() {
+                return new Compare.Equal("organisation", organisation);
+            }
+
+            @Override
+            protected Location createEntity() {
+                Location location = super.createEntity();
+                location.setOrganisation(getParentEntity());
+                return location;
+            }
+        };
+        return locationLayout;
+    }
 
 }

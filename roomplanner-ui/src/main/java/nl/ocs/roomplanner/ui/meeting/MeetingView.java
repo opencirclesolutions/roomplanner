@@ -51,6 +51,7 @@ public class MeetingView extends LazyBaseView {
         meetingLayout.addSortOrder(new SortOrder("meetingDate", SortDirection.ASCENDING));
         meetingLayout.addSortOrder(new SortOrder("whiteboard", SortDirection.ASCENDING));
         meetingLayout.setSortEnabled(false);
+        meetingLayout.setMaxResults(10);
 
         return meetingLayout;
     }

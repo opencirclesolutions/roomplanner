@@ -20,25 +20,26 @@ import com.vaadin.ui.Component;
 @SuppressWarnings("serial")
 public class EmployeesView extends LazyBaseView {
 
-	@Autowired
-	private EmployeeService employeeService;
+    @Autowired
+    private EmployeeService employeeService;
 
-	private TabularEditLayout<Integer, Employee> employeeLayout;
+    private TabularEditLayout<Integer, Employee> employeeLayout;
 
-	@Override
-	public Component build() {
+    @Override
+    public Component build() {
 
-		FormOptions options = new FormOptions().setShowRemoveButton(true);
+        FormOptions options = new FormOptions().setShowRemoveButton(true);
 
-		TabularEditLayout<Integer, Employee> employeeLayout = new TabularEditLayout<Integer, Employee>(employeeService,
-		        getModelFactory().getModel(Employee.class), options, new SortOrder("lastName", SortDirection.ASCENDING)) {
-		};
-		employeeLayout.addSortOrder(new SortOrder("firstName", SortDirection.ASCENDING));
-		return employeeLayout;
-	}
+        TabularEditLayout<Integer, Employee> employeeLayout = new TabularEditLayout<Integer, Employee>(employeeService,
+                getModelFactory().getModel(Employee.class), options,
+                new SortOrder("lastName", SortDirection.ASCENDING)) {
+        };
+        employeeLayout.addSortOrder(new SortOrder("firstName", SortDirection.ASCENDING));
+        return employeeLayout;
+    }
 
-	@Override
-	protected void refresh() {
-		employeeLayout.reload();
-	}
+    @Override
+    protected void refresh() {
+        employeeLayout.reload();
+    }
 }

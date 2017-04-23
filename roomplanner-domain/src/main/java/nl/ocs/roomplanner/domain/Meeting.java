@@ -69,7 +69,7 @@ public class Meeting extends AbstractEntity<Integer> {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "desired_location_id")
-    @Attribute(complexEditable = true, searchable = true, displayName = "Location")
+    @Attribute(complexEditable = true, searchable = true, displayName = "Location", requiredForSearching = true)
     private Location desiredLocation;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -128,7 +128,7 @@ public class Meeting extends AbstractEntity<Integer> {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organisation_id")
-    @Attribute(searchable = true, multipleSearch = true, requiredForSearching = true)
+    @Attribute(searchable = true, multipleSearch = true)
     private Organisation organisation;
 
     @Attribute(readOnly = true)
@@ -325,9 +325,6 @@ public class Meeting extends AbstractEntity<Integer> {
     @PrePersist
     @PreUpdate
     public void setStartDateTime() {
-        this.startDateTime = this.meetingDate.atStartOfDay();
-        if (this.startTime != null) {
-            this.startDateTime = this.startTime.atDate(this.meetingDate);
-        }
+        this.startDateTime = LocalDateTime.now();
     }
 }
